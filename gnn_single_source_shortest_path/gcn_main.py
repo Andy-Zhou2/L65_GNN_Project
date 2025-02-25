@@ -62,11 +62,11 @@ if __name__ == '__main__':
 
     # Set up device, model, and optimizer.
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = ShortestPathModel(num_layers=4, emb_dim=64, in_dim=1, edge_dim=1).to(device)
+    model = ShortestPathModel(num_layers=10, emb_dim=64, in_dim=1, edge_dim=1).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     # Training loop.
-    num_epochs = 175
+    num_epochs = 1750
     for epoch in range(1, num_epochs + 1):
         loss = train()
         test_loss = test(test_loader)
