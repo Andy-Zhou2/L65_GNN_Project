@@ -6,6 +6,7 @@ import networkx as nx
 import random
 import matplotlib.pyplot as plt
 import os
+import wandb
 
 
 class SSSPDataset(torch.utils.data.Dataset):
@@ -25,7 +26,7 @@ class SSSPDataset(torch.utils.data.Dataset):
 
     def generate_graph(self):
         # --- Generate a random connected graph ---
-        num_nodes = random.randint(5, 15)
+        num_nodes = random.randint(5, 5)
         k = min(4, num_nodes - 1)
         if k % 2 == 1:
             k += 1
@@ -48,13 +49,16 @@ class SSSPDataset(torch.utils.data.Dataset):
         x[source] = 1.0
 
         # --- Generate orthonormal features for nodes ---
-        # Create a random matrix and use QR decomposition.
-        A = torch.randn(num_nodes, self.d_p)
-        Q, _ = torch.linalg.qr(A)
-        P = Q  # shape: [num_nodes, d_p]
-        if num_nodes < self.d_p:
-            pad = torch.zeros(num_nodes, self.d_p - num_nodes)
-            P = torch.cat([P, pad], dim=-1)
+        # # Create a random matrix and use QR decomposition.
+        # A = torch.randn(num_nodes, self.d_p)
+        # Q, _ = torch.linalg.qr(A)
+        # P = Q  # shape: [num_nodes, d_p]
+        # if num_nodes < self.d_p:
+        #     pad = torch.zeros(num_nodes, self.d_p - num_nodes)
+        #     P = torch.cat([P, pad], dim=-1)
+
+        # Use one-hot encoding for nodes
+        P = torch.eye(num_nodes, self.d_p, dtype=torch.float)
 
         # --- Construct node tokens ---
         # Each node token: [node feature, P[node], P[node], fixed node type embedding]
@@ -141,13 +145,14 @@ class TokenGT(nn.Module):
 # Training with Train/Test Split and Evaluation
 # ---------------------------
 if __name__ == '__main__':
+    wandb.init(project="transformer-graph-learner")
     # Set random seeds for reproducibility.
     torch.manual_seed(42)
     random.seed(42)
 
     # Parameters for token generation.
-    d_p = 50      # dimension for node identifiers
-    d_e = 50      # dimension for type embeddings
+    d_p = 10      # dimension for node identifiers
+    d_e = 10      # dimension for type embeddings
     in_feat_dim = 1  # node/edge feature dimension (e.g., source flag or weight)
     token_in_dim = in_feat_dim + 2 * d_p + d_e
 
@@ -170,13 +175,14 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Model parameters.
-    d_model = 768
+    d_model = 128
     nhead = 8
-    num_layers = 20
+    num_layers = 4
     model = TokenGT(token_in_dim=token_in_dim, d_model=d_model, nhead=nhead, num_layers=num_layers).to(device)
 
     # Define optimizer and loss function.
-    optimizer = optim.Adam(model.parameters(), lr=1e-7)
+    optimizer = optim.Adam(model.parameters(), lr=1e-5)
+    scheduler = optim.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
     criterion = nn.MSELoss()
 
     # Helper function to move a dictionary of tensors to the device.
@@ -219,6 +225,7 @@ if __name__ == '__main__':
 
         avg_train_loss = total_loss / len(train_loader)
         test_loss = evaluate(test_loader)
+        scheduler.step(test_loss)
 
         # Save the model every 10 epochs.
         if (epoch + 1) % 10 == 0:
@@ -226,6 +233,7 @@ if __name__ == '__main__':
             torch.save(model.state_dict(), f"models/model_{epoch+1}.pth")
 
         print(f"Epoch {epoch+1}/{num_epochs}, Train Loss: {avg_train_loss:.4f}, Test Loss: {test_loss:.4f}")
+        wandb.log({"train_loss": avg_train_loss, "test_loss": test_loss}, step=epoch)
 
 
     # Evaluate a new graph
