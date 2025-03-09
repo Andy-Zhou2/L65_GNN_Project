@@ -132,12 +132,7 @@ class TokenGT(nn.Module):
         num_nodes = data['node_count']
         tokens = self.token_proj(tokens)  # [num_tokens, d_model]
         tokens = tokens.unsqueeze(0)  # add batch dimension
-
-        seq_len = tokens.size(1)
-        causal_mask = torch.triu(torch.ones(seq_len, seq_len, device=tokens.device) * float('-inf'), diagonal=1)
-
-        tokens = self.transformer(tokens, mask=causal_mask)  # [1, num_tokens, d_model]
-        # tokens = self.transformer(tokens)
+        tokens = self.transformer(tokens)  # [1, num_tokens, d_model]
         tokens = tokens.squeeze(0)  # [num_tokens, d_model]
 
         # Extract node tokens (first num_nodes tokens) for prediction.
@@ -182,12 +177,12 @@ if __name__ == '__main__':
     # Model parameters.
     d_model = 128
     nhead = 8
-    num_layers = 30
+    num_layers = 4
     model = TokenGT(token_in_dim=token_in_dim, d_model=d_model, nhead=nhead, num_layers=num_layers).to(device)
 
     # Define optimizer and loss function.
     optimizer = optim.Adam(model.parameters(), lr=1e-5)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
+    scheduler = optim.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
     criterion = nn.MSELoss()
 
     # Helper function to move a dictionary of tensors to the device.

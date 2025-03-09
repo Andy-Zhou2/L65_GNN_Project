@@ -132,11 +132,7 @@ class TokenGT(nn.Module):
         num_nodes = data['node_count']
         tokens = self.token_proj(tokens)  # [num_tokens, d_model]
         tokens = tokens.unsqueeze(0)  # add batch dimension
-
-        seq_len = tokens.size(1)
-        causal_mask = torch.triu(torch.ones(seq_len, seq_len, device=tokens.device) * float('-inf'), diagonal=1)
-
-        tokens = self.transformer(tokens, mask=causal_mask)  # [1, num_tokens, d_model]
+        tokens = self.transformer(tokens)  # [1, num_tokens, d_model]
         tokens = tokens.squeeze(0)  # [num_tokens, d_model]
 
         # Extract node tokens (first num_nodes tokens) for prediction.
@@ -189,12 +185,11 @@ if __name__ == '__main__':
         data["y"] = data["y"].to(device)
         return data
 
-    model.load_state_dict(torch.load('models/model_1990.pth', map_location=device))
+    model.load_state_dict(torch.load('models/model_140.pth', map_location=device))
 
     # Evaluate a new graph
     # --- Select a single sample graph from the test dataset ---
-    sample_idx = 1 #random.randint(0, len(test_dataset) - 1)
-    print(f"Visualizing graph {sample_idx} from the test dataset.")
+    sample_idx = random.randint(0, len(test_dataset) - 1)
     sample_data = to_device(test_dataset[sample_idx], device)
 
     # --- Get predictions ---
