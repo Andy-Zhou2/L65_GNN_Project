@@ -182,7 +182,7 @@ if __name__ == '__main__':
 
     # Define optimizer and loss function.
     optimizer = optim.Adam(model.parameters(), lr=1e-5)
-    scheduler = optim.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
     criterion = nn.MSELoss()
 
     # Helper function to move a dictionary of tensors to the device.
