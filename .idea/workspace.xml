@@ -4,7 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="72be881f-159a-4aae-a762-8a66d38ef03c" name="Changes" comment="pre-process tokens in dataset">
+    <list default="true" id="72be881f-159a-4aae-a762-8a66d38ef03c" name="Changes" comment="Refactor graph_learner_eval.py to use Hydra for configuration management and improve parameter handling">
+      <change afterPath="$PROJECT_DIR$/transformers_graph_learner/evaluate_model.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/transformers_graph_learner/sweep.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/transformers_graph_learner/train_model.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/transformers_graph_learner/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/transformers_graph_learner/configs/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/transformers_graph_learner/configs/config.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/transformers_graph_learner/graph_learner_eval.py" beforeDir="false" afterPath="$PROJECT_DIR$/transformers_graph_learner/graph_learner_eval.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/transformers_graph_learner/graph_learner_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/transformers_graph_learner/graph_learner_main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -51,6 +57,7 @@
     &quot;Python.main (1).executor&quot;: &quot;Run&quot;,
     &quot;Python.main.executor&quot;: &quot;Run&quot;,
     &quot;Python.model.executor&quot;: &quot;Run&quot;,
+    &quot;Python.sweep.executor&quot;: &quot;Run&quot;,
     &quot;Python.t.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
@@ -71,7 +78,7 @@
       <recent name="$PROJECT_DIR$/gnn_single_source_shortest_path" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.graph_learner_main">
+  <component name="RunManager" selected="Python.sweep">
     <configuration name="graph_gen" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="L65_GNN_Project" />
       <option name="ENV_FILES" value="" />
@@ -187,7 +194,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="model" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="sweep" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="L65_GNN_Project" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -196,12 +203,12 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/transformers_graph_learner" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/gnn_single_source_shortest_path/model.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/transformers_graph_learner/sweep.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -212,11 +219,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.sweep" />
         <item itemvalue="Python.graph_learner_main" />
         <item itemvalue="Python.graph_learner_eval" />
         <item itemvalue="Python.graph_gen" />
         <item itemvalue="Python.main" />
-        <item itemvalue="Python.model" />
       </list>
     </recent_temporary>
   </component>
@@ -274,7 +281,39 @@
       <option name="project" value="LOCAL" />
       <updated>1741089437960</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Fix scheduler import for learning rate adjustment">
+      <option name="closed" value="true" />
+      <created>1741690308285</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1741690308285</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Refactor code to be modular">
+      <option name="closed" value="true" />
+      <created>1741690884316</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1741690884316</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Add configuration file and refactor main function for improved modularity">
+      <option name="closed" value="true" />
+      <created>1741693162504</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1741693162504</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Refactor graph_learner_eval.py to use Hydra for configuration management and improve parameter handling">
+      <option name="closed" value="true" />
+      <created>1741693267379</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1741693267379</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -296,7 +335,11 @@
     <MESSAGE value="add code for graph learner" />
     <MESSAGE value="separate eval file" />
     <MESSAGE value="pre-process tokens in dataset" />
-    <option name="LAST_COMMIT_MESSAGE" value="pre-process tokens in dataset" />
+    <MESSAGE value="Fix scheduler import for learning rate adjustment" />
+    <MESSAGE value="Refactor code to be modular" />
+    <MESSAGE value="Add configuration file and refactor main function for improved modularity" />
+    <MESSAGE value="Refactor graph_learner_eval.py to use Hydra for configuration management and improve parameter handling" />
+    <option name="LAST_COMMIT_MESSAGE" value="Refactor graph_learner_eval.py to use Hydra for configuration management and improve parameter handling" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -306,6 +349,11 @@
           <line>69</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$USER_HOME$/miniconda3/envs/gnn_practical/lib/python3.10/site-packages/hydra/_internal/utils.py</url>
+          <line>457</line>
+          <option name="timeStamp" value="9" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
@@ -313,9 +361,10 @@
     <SUITE FILE_PATH="coverage/L65_GNN_Project$model.coverage" NAME="model Coverage Results" MODIFIED="1739901619719" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/L65_GNN_Project$t.coverage" NAME="main Coverage Results" MODIFIED="1739959959617" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/L65_GNN_Project$main.coverage" NAME="main Coverage Results" MODIFIED="1740437105151" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/L65_GNN_Project$graph_learner_main.coverage" NAME="graph_learner_main Coverage Results" MODIFIED="1741543926715" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/transformers_graph_learner" />
+    <SUITE FILE_PATH="coverage/L65_GNN_Project$graph_learner_main.coverage" NAME="graph_learner_main Coverage Results" MODIFIED="1741698356616" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/transformers_graph_learner" />
     <SUITE FILE_PATH="coverage/L65_GNN_Project$main__1_.coverage" NAME="main (1) Coverage Results" MODIFIED="1740437249093" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/transformers_graph_learner" />
+    <SUITE FILE_PATH="coverage/L65_GNN_Project$sweep.coverage" NAME="sweep Coverage Results" MODIFIED="1741698998286" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/transformers_graph_learner" />
     <SUITE FILE_PATH="coverage/L65_GNN_Project$graph_gen.coverage" NAME="graph_gen Coverage Results" MODIFIED="1740432872379" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/L65_GNN_Project$graph_learner_eval.coverage" NAME="graph_learner_eval Coverage Results" MODIFIED="1741542082390" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/transformers_graph_learner" />
+    <SUITE FILE_PATH="coverage/L65_GNN_Project$graph_learner_eval.coverage" NAME="graph_learner_eval Coverage Results" MODIFIED="1741693250794" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/transformers_graph_learner" />
   </component>
 </project>
