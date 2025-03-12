@@ -28,28 +28,30 @@ def sweep_train():
 
 
 if __name__ == "__main__":
-    sweep_config = {
-        'method': 'random',
-        'metric': {
-            'name': 'test_loss',  # the metric to optimize
-            'goal': 'minimize'
-        },
-        'parameters': {
-            'model.nhead': {
-                'values': [1, 2, 4, 8, 16, 32]
-            },
-            'model.num_layers': {
-                'values': [2, 3, 4, 5, 6, 8, 10]
-            },
-            'training.lr': {
-                'values': [1e-5] #[1e-6, 1e-5, 1e-4, 1e-3]
-            }
-        }
-    }
-
-    # Create the sweep and get the sweep id.
-    sweep_id = wandb.sweep(sweep_config, project="transformer-graph-learner")
-    print(f"Sweep ID: {sweep_id}")
+    # sweep_config = {
+    #     'method': 'random',
+    #     'metric': {
+    #         'name': 'test_loss',  # the metric to optimize
+    #         'goal': 'minimize'
+    #     },
+    #     'parameters': {
+    #         'model.nhead': {
+    #             'values': [1, 2, 4, 8, 16, 32]
+    #         },
+    #         'model.num_layers': {
+    #             'values': [2, 3, 4, 5, 6, 8, 10]
+    #         },
+    #         'training.lr': {
+    #             'values': [1e-5] #[1e-6, 1e-5, 1e-4, 1e-3]
+    #         }
+    #     }
+    # }
+    #
+    # # Create the sweep and get the sweep id.
+    # sweep_id = wandb.sweep(sweep_config, project="transformer-graph-learner")
+    # print(f"Sweep ID: {sweep_id}")
 
     # Start the sweep agent; count sets how many runs to execute.
-    wandb.agent(sweep_id, function=sweep_train, count=500)
+    wandb.agent('bnsf6pov', function=sweep_train,
+                project='transformer-graph-learner', entity='wz337',
+                count=500)
