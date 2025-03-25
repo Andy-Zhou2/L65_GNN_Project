@@ -5,7 +5,7 @@ import random
 
 
 class SSSPDataset(torch.utils.data.Dataset):
-    def __init__(self, num_graphs=100, d_p=8, d_e=8):
+    def __init__(self, num_graphs=100, d_p=8, d_e=8, n_nodes_range=(20, 20)):
         """
         Args:
             num_graphs (int): Number of graphs in the dataset.
@@ -17,11 +17,13 @@ class SSSPDataset(torch.utils.data.Dataset):
         self.d_p = d_p
         self.d_e = d_e
         self.in_feat_dim = 1  # Node and edge features are 1-dimensional (e.g. source flag and weight)
+        self.n_nodes_range = n_nodes_range  # Must be defined before generating graphs
+
         self.data_list = [self.generate_graph() for _ in range(num_graphs)]
 
     def generate_graph(self):
         # --- Generate a random connected graph ---
-        num_nodes = random.randint(5, 8)
+        num_nodes = random.randint(*self.n_nodes_range)
         k = min(4, num_nodes - 1)
         if k % 2 == 1:
             k += 1

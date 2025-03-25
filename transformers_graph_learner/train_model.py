@@ -35,7 +35,7 @@ def train_model(cfg: DictConfig):
     token_in_dim = in_feat_dim + 2 * d_p + d_e
 
     # Create the dataset.
-    dataset = SSSPDataset(num_graphs=cfg.dataset.num_graphs, d_p=d_p, d_e=d_e)
+    dataset = SSSPDataset(num_graphs=cfg.dataset.num_graphs, d_p=d_p, d_e=d_e, n_nodes_range=cfg.dataset.n_nodes_range)
     print(f"Total graphs in dataset: {len(dataset)}")
 
     # Split dataset into train and test (e.g., 80/20 split).

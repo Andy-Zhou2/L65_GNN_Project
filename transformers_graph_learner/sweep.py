@@ -11,47 +11,53 @@ def sweep_train():
             cfg = compose(config_name="config")
 
         # Extract hyperparameters from wandb config with defaults.
-        nhead = wandb.config.get("model.nhead", 8)
-        num_layers = wandb.config.get("model.num_layers", 4)
-        lr = wandb.config.get("training.lr", 1e-5)
+        print('wandb config:', wandb.config)
+        seed = wandb.config['seed']
+        nhead = wandb.config['model.nhead']
+        num_layers = wandb.config['model.num_layers']
+        n_nodes_range = wandb.config['dataset.n_nodes_range']
 
-        custom_name = f"{num_layers} x {nhead} at {lr}"
+        custom_name = f"{num_layers} x {nhead} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) seed {seed}"
         wandb.run.name = custom_name
 
         # override the config with the new hyperparameters
+        cfg.seed = seed
         cfg.model.nhead = nhead
         cfg.model.num_layers = num_layers
-        cfg.training.lr = lr
+        cfg.dataset.n_nodes_range = n_nodes_range
 
         train_model(cfg)
 
 
 
 if __name__ == "__main__":
-    # sweep_config = {
-    #     'method': 'random',
-    #     'metric': {
-    #         'name': 'test_loss',  # the metric to optimize
-    #         'goal': 'minimize'
-    #     },
-    #     'parameters': {
-    #         'model.nhead': {
-    #             'values': [1, 2, 4, 8, 16, 32]
-    #         },
-    #         'model.num_layers': {
-    #             'values': [2, 3, 4, 5, 6, 8, 10]
-    #         },
-    #         'training.lr': {
-    #             'values': [1e-5] #[1e-6, 1e-5, 1e-4, 1e-3]
-    #         }
-    #     }
-    # }
-    #
-    # # Create the sweep and get the sweep id.
-    # sweep_id = wandb.sweep(sweep_config, project="transformer-graph-learner")
-    # print(f"Sweep ID: {sweep_id}")
+    sweep_config = {
+        'method': 'grid',
+        'metric': {
+            'name': 'test_loss',  # the metric to optimize
+            'goal': 'minimize'
+        },
+        'parameters': {
+            'seed': {
+                'values': [42, 43, 44, 45, 46]
+            },
+            'model.nhead': {
+                'values': [1]
+            },
+            'model.num_layers': {
+                'values': [1, 2, 3, 4, 5]
+            },
+            'dataset.n_nodes_range': {
+                'values': [(i, i) for i in [2, 3, 4, 5, 8, 16, 32]]
+            }
+        }
+    }
+
+    # Create the sweep and get the sweep id.
+    sweep_id = wandb.sweep(sweep_config, project="transformer-graph-learner")
+    print(f"Sweep ID: {sweep_id}")
 
     # Start the sweep agent; count sets how many runs to execute.
-    wandb.agent('bnsf6pov', function=sweep_train,
+    wandb.agent(sweep_id, function=sweep_train,
                 project='transformer-graph-learner', entity='wz337',
-                count=500)
+                count=5000)

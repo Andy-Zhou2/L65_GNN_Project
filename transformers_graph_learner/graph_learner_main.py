@@ -7,7 +7,7 @@ import shutil
 
 from train_model import train_model
 
-os.environ["WANDB_MODE"] = "disabled"
+# os.environ["WANDB_MODE"] = "disabled"
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="config")
