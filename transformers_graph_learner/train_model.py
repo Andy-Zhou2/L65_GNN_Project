@@ -6,6 +6,8 @@ import torch.optim as optim
 from torch_geometric.data import DataLoader
 import wandb
 from omegaconf import DictConfig, OmegaConf
+import numpy as np
+import pytorch_warmup as warmup
 
 from graph_gen import SSSPDataset
 from token_graph_transformer import TokenGT
@@ -18,7 +20,7 @@ def train_model(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
 
     # Initialize Weights & Biases.
-    wandb.init(project=cfg.wandb.project)
+    wandb.init(project=cfg.wandb.project, config=OmegaConf.to_container(cfg, resolve=True))
 
     # Set random seeds for reproducibility.
     torch.manual_seed(cfg.seed)
@@ -69,9 +71,12 @@ def train_model(cfg: DictConfig):
 
     # Define optimizer, scheduler, and loss function.
     optimizer = optim.Adam(model.parameters(), lr=cfg.training.lr)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=cfg.scheduler.factor, patience=cfg.scheduler.patience
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(
+        optimizer,
+        T_max=cfg.scheduler.T_max,  # Total number of iterations or epochs
+        eta_min=cfg.scheduler.eta_min  # Minimum learning rate
     )
+    warmup_scheduler = warmup.UntunedLinearWarmup(optimizer)
     criterion = nn.MSELoss()
 
     # Training loop.
@@ -90,7 +95,8 @@ def train_model(cfg: DictConfig):
 
         avg_train_loss = total_loss / len(train_loader)
         test_loss = evaluate(test_loader, model, criterion, device)
-        scheduler.step(test_loss)
+        with warmup_scheduler.dampening():
+            scheduler.step()
 
         # Save the model based on the configuration.
         if (epoch + 1) % cfg.training.save_every == 0:
@@ -102,8 +108,14 @@ def train_model(cfg: DictConfig):
             torch.save(model.state_dict(), save_path)
             print(f"Model saved to {save_path}")
 
+        current_lr = scheduler.get_last_lr()[0]
+        current_lr_log = np.log10(current_lr)
         print(
-            f"Epoch {epoch + 1}/{cfg.training.num_epochs}, Train Loss: {avg_train_loss:.4f}, Test Loss: {test_loss:.4f}")
-        wandb.log({"train_loss": avg_train_loss, "test_loss": test_loss}, step=epoch)
+            f"Epoch {epoch + 1}/{cfg.training.num_epochs}, Train Loss: {avg_train_loss:.4f}, Test Loss: {test_loss:.4f}, Learning Rate: 1e{current_lr_log}")
+        wandb.log({"train_loss": avg_train_loss, "test_loss": test_loss, "learning_rate": current_lr, "learning_rate_log": current_lr_log
+                   }, step=epoch)
+        if current_lr <= 1e-8:
+            print("Learning rate reached below 1e-8. Stopping training.")
+            break
 
     evaluate_on_graph(model, test_dataset, device)

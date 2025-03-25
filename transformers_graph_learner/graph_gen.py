@@ -20,7 +20,7 @@ class SSSPDataset(torch.utils.data.Dataset):
 
     def generate_graph(self):
         # --- Generate a random connected graph ---
-        num_nodes = random.randint(5, 5)
+        num_nodes = random.randint(8, 8)
         k = min(4, num_nodes - 1)
         if k % 2 == 1:
             k += 1
