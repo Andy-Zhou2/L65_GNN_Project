@@ -1,4 +1,3 @@
-from copy import deepcopy
 import torch
 from torch_geometric.data import Data, InMemoryDataset
 import networkx as nx
@@ -25,7 +24,6 @@ class SSSPDataset(InMemoryDataset):
             if k % 2 == 1:
                 k += 1
             G = nx.connected_watts_strogatz_graph(num_nodes, k, 0.3)
-            UG = deepcopy(G)
 
             # --- Assign random weights to edges ---
             for u, v in G.edges():
@@ -37,13 +35,6 @@ class SSSPDataset(InMemoryDataset):
             # --- Compute shortest path distances from the source ---
             path_lengths = nx.single_source_dijkstra_path_length(G, source)
             y = [path_lengths.get(i, float('inf')) for i in range(num_nodes)]
-
-            # Compute max hop
-            hop_lengths = nx.single_source_dijkstra_path_length(UG, source)
-            hops = torch.tensor(
-                [hop_lengths.get(i, float("inf")) for i in range(num_nodes)],
-                dtype=torch.int,
-            )
 
             # --- Create node features ---
             # Here, the only node feature is the binary source flag.
@@ -68,8 +59,7 @@ class SSSPDataset(InMemoryDataset):
                 x=x,  # Node features (source flag)
                 edge_index=edge_index,  # Graph connectivity
                 edge_attr=edge_attr,  # Edge weights
-                y=torch.tensor(y, dtype=torch.float),  # Ground-truth distances
-                hops=hops,  # Max hops from the source
+                y=torch.tensor(y, dtype=torch.float)  # Ground-truth distances
             )
             data_list.append(data_obj)
 
