@@ -24,11 +24,15 @@ def evaluate(loader, model, criterion, device):
 def evaluate_on_graph(model, test_dataset, device):
     # Select a random graph from the test dataset.
     sample_idx = random.randint(0, len(test_dataset) - 1)
-    sample_data = to_device(test_dataset[sample_idx], device)
+    sample_data = test_dataset[sample_idx]
+    sample_data["tokens"] = sample_data["tokens"].to(device).unsqueeze(0)
+    sample_data["y"] = sample_data["y"].to(device)
+    sample_data["attn_mask"] = torch.ones(sample_data["tokens"].size()[1]).to(device).unsqueeze(0)
+    sample_data["node_count"] = torch.tensor(sample_data["node_count"]).to(device).unsqueeze(0)
 
     model.eval()
     with torch.no_grad():
-        predicted_distances = model(sample_data).cpu()
+        predicted_distances = model(sample_data).cpu()[0]
     true_distances = sample_data['y'].cpu()
 
     # Convert PyG Data object to a NetworkX graph.
