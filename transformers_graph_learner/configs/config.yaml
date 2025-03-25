@@ -4,7 +4,7 @@ wandb:
   project: "transformer-graph-learner"
 
 dataset:
-  num_graphs: 1000
+  num_graphs: 10000
   d_p: 10
   d_e: 10
   in_feat_dim: 1
@@ -14,15 +14,15 @@ dataset:
 training:
   epoch: &num_epochs 2000
   num_epochs: *num_epochs
-  batch_size: 1
+  batch_size: 1024
   lr: 1e-3
   device: "cuda"  # set to "cpu" if you don't want to use CUDA
   save_every: 100
 
 model:
-  d_model: 128
+  d_model: 512
   nhead: 8
-  num_layers: 1
+  num_layers: 3
 
 scheduler:
   factor: 0.1

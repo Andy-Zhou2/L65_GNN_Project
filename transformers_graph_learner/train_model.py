@@ -3,13 +3,15 @@ import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch_geometric.data import DataLoader
+# from torch_geometric.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 import wandb
 from omegaconf import DictConfig, OmegaConf
 import numpy as np
 import pytorch_warmup as warmup
+import time
 
-from graph_gen import SSSPDataset
+from graph_gen import SSSPDataset, collate_fn
 from token_graph_transformer import TokenGT
 from utils import to_device
 from evaluate_model import evaluate, evaluate_on_graph
@@ -48,11 +50,14 @@ def train_model(cfg: DictConfig):
         batch_size=cfg.training.batch_size,
         shuffle=True,
         pin_memory=True,
+        collate_fn=collate_fn,
     )
     test_loader = DataLoader(
         test_dataset,
         batch_size=cfg.training.batch_size,
         shuffle=False,
+        pin_memory=True,
+        collate_fn=collate_fn,
     )
 
     # Device configuration.
@@ -79,12 +84,12 @@ def train_model(cfg: DictConfig):
     warmup_scheduler = warmup.UntunedLinearWarmup(optimizer)
     criterion = nn.MSELoss()
 
+    training_start_time = time.time()
     # Training loop.
     for epoch in range(cfg.training.num_epochs):
         model.train()
         total_loss = 0.0
-        for batch in train_loader:
-            data = {k: v[0] for k, v in batch.items()}
+        for data in train_loader:
             data = to_device(data, device)
             optimizer.zero_grad()
             pred = model(data)
@@ -112,7 +117,8 @@ def train_model(cfg: DictConfig):
         current_lr_log = np.log10(current_lr)
         print(
             f"Epoch {epoch + 1}/{cfg.training.num_epochs}, Train Loss: {avg_train_loss:.4f}, Test Loss: {test_loss:.4f}, Learning Rate: 1e{current_lr_log}")
-        wandb.log({"train_loss": avg_train_loss, "test_loss": test_loss, "learning_rate": current_lr, "learning_rate_log": current_lr_log
+        wandb.log({"train_loss": avg_train_loss, "test_loss": test_loss, "learning_rate": current_lr,
+                   "learning_rate_log": current_lr_log, "time": time.time() - training_start_time
                    }, step=epoch)
         if current_lr <= 1e-8:
             print("Learning rate reached below 1e-8. Stopping training.")

@@ -11,14 +11,13 @@ def evaluate(loader, model, criterion, device):
     total_loss = 0.0
     total_nodes = 0
     with torch.no_grad():
-        for batch in loader:
+        for data in loader:
             # Since batch_size=1, extract the single sample from each batch.
-            data = {k: v[0] for k, v in batch.items()}
             data = to_device(data, device)
             pred = model(data)
             loss = criterion(pred, data["y"])
-            total_loss += loss.item() * data["node_count"]
-            total_nodes += data["node_count"]
+            total_loss += loss.item() * data["node_count"].sum()
+            total_nodes += data["node_count"].sum().item()
     return total_loss / total_nodes
 
 

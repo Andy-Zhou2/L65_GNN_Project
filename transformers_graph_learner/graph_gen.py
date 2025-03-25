@@ -20,7 +20,7 @@ class SSSPDataset(torch.utils.data.Dataset):
 
     def generate_graph(self):
         # --- Generate a random connected graph ---
-        num_nodes = random.randint(8, 8)
+        num_nodes = random.randint(5, 8)
         k = min(4, num_nodes - 1)
         if k % 2 == 1:
             k += 1
@@ -92,3 +92,48 @@ class SSSPDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         return self.data_list[idx]
+
+
+def collate_fn(batch):
+    # batch is a list of dictionaries from __getitem__
+    # Extract tokens and other items you need
+    tokens_list = [d["tokens"] for d in batch]
+    y_list = [d["y"] for d in batch]
+    node_counts = [d["node_count"] for d in batch]
+
+    # Determine the maximum token sequence length in this batch
+    max_len = max(token.shape[0] for token in tokens_list)
+
+    padded_tokens = []
+    attn_masks = []
+    for tokens in tokens_list:
+        pad_len = max_len - tokens.shape[0]
+        if pad_len > 0:
+            # pad with zeros (or a dedicated pad value)
+            pad = torch.zeros(pad_len, tokens.shape[1])
+            tokens_padded = torch.cat([tokens, pad], dim=0)
+        else:
+            tokens_padded = tokens
+        padded_tokens.append(tokens_padded)
+
+        # Create an attention mask: 1 for real tokens, 0 for padding
+        mask = torch.cat([torch.ones(tokens.shape[0]), torch.zeros(pad_len)])
+        attn_masks.append(mask)
+
+    # Stack padded tokens and masks: shapes [batch_size, max_len, feature_dim] and [batch_size, max_len]
+    batch_tokens = torch.stack(padded_tokens)
+    batch_masks = torch.stack(attn_masks)
+
+    # Optionally, pad other sequence targets (e.g., y)
+    # Here we assume y is a 1D tensor per graph; adjust if necessary.
+    batch_y = torch.nn.utils.rnn.pad_sequence(y_list, batch_first=True, padding_value=0)
+
+    # You can also collate node_counts, edge information, etc.
+    batch_node_counts = torch.tensor(node_counts)
+
+    return {
+        "tokens": batch_tokens,
+        "attn_mask": batch_masks,
+        "y": batch_y,
+        "node_count": batch_node_counts
+    }
