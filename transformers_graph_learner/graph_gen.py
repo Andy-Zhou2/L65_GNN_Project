@@ -1,3 +1,4 @@
+from copy import deepcopy
 import torch
 import networkx as nx
 import random
@@ -25,6 +26,7 @@ class SSSPDataset(torch.utils.data.Dataset):
         if k % 2 == 1:
             k += 1
         G = nx.connected_watts_strogatz_graph(num_nodes, k, 0.3)
+        UG = deepcopy(G)
 
         # --- Assign random weights to edges ---
         for u, v in G.edges():
@@ -36,6 +38,13 @@ class SSSPDataset(torch.utils.data.Dataset):
         y = torch.tensor(
             [path_lengths.get(i, float('inf')) for i in range(num_nodes)],
             dtype=torch.float
+        )
+
+        # Compute max hop
+        hop_lengths = nx.single_source_dijkstra_path_length(UG, source)
+        hops = torch.tensor(
+            [hop_lengths.get(i, float("inf")) for i in range(num_nodes)],
+            dtype=torch.int,
         )
 
         # --- Create node features (source flag) ---
@@ -51,6 +60,7 @@ class SSSPDataset(torch.utils.data.Dataset):
         #     pad = torch.zeros(num_nodes, self.d_p - num_nodes)
         #     P = torch.cat([P, pad], dim=-1)
 
+        # TODO: test other orthonormal features for nodes and edges
         # Use one-hot encoding for nodes
         P = torch.eye(num_nodes, self.d_p, dtype=torch.float)
 
@@ -85,7 +95,7 @@ class SSSPDataset(torch.utils.data.Dataset):
         tokens = torch.cat([node_tokens, edge_tokens], dim=0)
 
         return {'tokens': tokens, 'node_count': num_nodes, 'y': y,
-                'x': x, 'edge_index': edge_index, 'edge_attr': edge_attr}
+                'x': x, "hops": hops, 'edge_index': edge_index, 'edge_attr': edge_attr}
 
     def __len__(self):
         return self.num_graphs
@@ -100,6 +110,7 @@ def collate_fn(batch):
     tokens_list = [d["tokens"] for d in batch]
     y_list = [d["y"] for d in batch]
     node_counts = [d["node_count"] for d in batch]
+    max_hops = [d["hops"] for d in batch]
 
     # Determine the maximum token sequence length in this batch
     max_len = max(token.shape[0] for token in tokens_list)
@@ -131,9 +142,12 @@ def collate_fn(batch):
     # You can also collate node_counts, edge information, etc.
     batch_node_counts = torch.tensor(node_counts)
 
+    batch_max_hops = torch.tensor(max_hops, dtype=torch.int)
+
     return {
         "tokens": batch_tokens,
         "attn_mask": batch_masks,
         "y": batch_y,
-        "node_count": batch_node_counts
+        "node_count": batch_node_counts,
+        "hops": batch_max_hops,
     }
