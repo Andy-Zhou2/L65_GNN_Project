@@ -1,3 +1,6 @@
+defaults:
+  - override hydra/launcher: joblib
+  
 seed: 42
 
 wandb:

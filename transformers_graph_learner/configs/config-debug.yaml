@@ -1,3 +1,6 @@
+defaults:
+  - override hydra/launcher: joblib
+  
 seed: 42
 
 wandb:
@@ -16,7 +19,7 @@ dataset:
 
 
 training:
-  epoch: &num_epochs 30
+  epoch: &num_epochs 100
   num_epochs: *num_epochs
   batch_size: 1024
   lr: 1e-3
