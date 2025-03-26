@@ -51,7 +51,6 @@ def train_model(cfg: DictConfig):
     dataset = SSSPDataset(
         num_graphs=cfg.dataset.num_graphs,
         d_p=d_p,
-        d_e=d_e,
         n_nodes_range=cfg.dataset.n_nodes_range,
     )
     print(f"Total graphs in dataset: {len(dataset)}")
@@ -90,6 +89,7 @@ def train_model(cfg: DictConfig):
         d_model=cfg.model.d_model,
         nhead=cfg.model.nhead,
         num_layers=cfg.model.num_layers,
+        d_e=d_e,
     ).to(device)
 
     # Define optimizer, scheduler, and loss function.

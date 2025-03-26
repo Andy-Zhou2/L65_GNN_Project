@@ -5,7 +5,7 @@ from probing.earlyexit_transformer_encoder import EarlyExitTransformerEncoder
 
 
 class TokenGT(nn.Module):
-    def __init__(self, token_in_dim, d_model, nhead, num_layers, activation="gelu", dropout=0.1, input_dropout=0.1):
+    def __init__(self, token_in_dim, d_model, nhead, num_layers, d_e=None, activation="gelu", dropout=0.1, input_dropout=0.1):
         """
         Args:
             token_in_dim (int): Dimensionality of the input tokens
@@ -13,14 +13,20 @@ class TokenGT(nn.Module):
             d_model (int): Hidden dimension of the Transformer.
             nhead (int): Number of attention heads.
             num_layers (int): Number of Transformer encoder layers.
+            d_e (int): Type identifier dimension. Default to d_model.
+            activation: Activation function in MLP modules. Default to GeLU.
+            dropout: Dropout rate in encoder layers. Default to 0.1.
+            input_dropout: Dropout rate in the input projection. Default to 0.1.
         """
         super(TokenGT, self).__init__()
+        self.d_model = d_model
+        self.d_e = d_model if d_e is None else d_e
         # Folloing TokenGT, use input dropout
         self.token_proj = nn.Sequential(
             nn.Linear(token_in_dim, d_model),
             nn.Dropout(input_dropout),
         )
-        self.type_identifier = nn.Parameter()
+        self.type_embedding = nn.Embedding(2, d_model)
         # Following TokenGT, use GeLU and layernorm-first. Following Llama, use d_ff = d_model * 3.5
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=d_model, nhead=nhead, dim_feedforward=3.5 * d_model, activation=activation, dropout=dropout, batch_first=True, norm_first=True,
@@ -36,7 +42,7 @@ class TokenGT(nn.Module):
         """
         Args:
             data (dict): Contains:
-                - 'tokens': Tensor of shape [B, num_tokens, token_in_dim]
+                - 'tokens': Tensor of shape [B, num_tokens, token_in_dim - d_e]
                 - 'attn_mask': Tensor of shape [B, num_tokens] (1 for valid, 0 for padding)
                 - 'node_count': Tensor of shape [B] with number of node tokens (first tokens in each sample)
                 - 'y': Ground-truth (unused here)
@@ -44,9 +50,16 @@ class TokenGT(nn.Module):
             pred (torch.Tensor): Predicted distances for each node, shape [B, num_tokens]
                                  with padded positions zeroed out.
         """
-        tokens = data["tokens"]  # [B, num_tokens, token_in_dim]
+        tokens = data["tokens"]  # [B, num_tokens, token_in_dim - d_e]
         attn_mask = data["attn_mask"]  # [B, num_tokens]
         node_count = data["node_count"]  # [B]
+
+        # Append type identifiers
+        node_edge_type = torch.ones_like(attn_mask, dtype=torch.int, device=tokens.device)  # [B, num_tokens]
+        for b in len(node_edge_type):
+            node_edge_type[b][:node_count[b]] = 0
+        type_id = self.type_embedding(node_edge_type)  # [B, num_tokens, d_e]
+        tokens = torch.cat((tokens, type_id), dim=-1)  # [B, num_tokens, token_in_dim]
 
         # Project input tokens to model dimension.
         tokens = self.token_proj(tokens)  # [B, num_tokens, d_model]

@@ -4,17 +4,14 @@ import random
 
 
 class SSSPDataset(torch.utils.data.Dataset):
-    def __init__(self, num_graphs=100, d_p=8, d_e=8, n_nodes_range=(20, 20)):
+    def __init__(self, num_graphs=100, d_p=8, n_nodes_range=(20, 20)):
         """
         Args:
             num_graphs (int): Number of graphs in the dataset.
             d_p (int): Dimensionality of the orthonormal node identifiers.
-            d_e (int): Dimensionality of the fixed type embedding.
-                        (Here we use fixed embeddings: zeros for nodes, ones for edges.)
         """
         self.num_graphs = num_graphs
         self.d_p = d_p
-        self.d_e = d_e
         self.in_feat_dim = (
             1  # Node and edge features are 1-dimensional (e.g. source flag and weight)
         )
@@ -55,14 +52,16 @@ class SSSPDataset(torch.utils.data.Dataset):
         #     pad = torch.zeros(num_nodes, self.d_p - num_nodes)
         #     P = torch.cat([P, pad], dim=-1)
 
+        # TODO: ORF and Laplacian
+        # TODO: deal with d_p != n
         # Use one-hot encoding for nodes
         P = torch.eye(num_nodes, self.d_p, dtype=torch.float)
 
         # --- Construct node tokens ---
         # Each node token: [node feature, P[node], P[node], fixed node type embedding]
-        node_type = torch.zeros((num_nodes, self.d_e))  # fixed type embedding for nodes
+        # node_type = torch.zeros((num_nodes, self.d_e))  # fixed type embedding for nodes
         node_tokens = torch.cat(
-            [x, P, P, node_type], dim=-1
+            [x, P, P], dim=-1
         )  # shape: [num_nodes, 1 + 2*d_p + d_e]
 
         # --- Construct edge tokens ---
@@ -84,9 +83,9 @@ class SSSPDataset(torch.utils.data.Dataset):
         edge_target = edge_index[1]
         P_source = P[edge_source]  # shape: [num_edges, d_p]
         P_target = P[edge_target]  # shape: [num_edges, d_p]
-        edge_type = torch.ones((num_edges, self.d_e))  # fixed type embedding for edges
+        # edge_type = torch.ones((num_edges, self.d_e))  # fixed type embedding for edges
         edge_tokens = torch.cat(
-            [edge_attr, P_source, P_target, edge_type], dim=-1
+            [edge_attr, P_source, P_target], dim=-1
         )  # shape: [num_edges, 1+2*d_p+d_e]
 
         # --- Combine tokens (nodes first, then edges) ---
