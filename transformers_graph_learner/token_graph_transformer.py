@@ -1,9 +1,11 @@
 import torch.nn as nn
 import torch
 
+from probing.earlyexit_transformer_encoder import EarlyExitTransformerEncoder
+
 
 class TokenGT(nn.Module):
-    def __init__(self, token_in_dim, d_model, nhead, num_layers, dropout=0.1):
+    def __init__(self, token_in_dim, d_model, nhead, num_layers, activation="gelu", dropout=0.1, input_dropout=0.1):
         """
         Args:
             token_in_dim (int): Dimensionality of the input tokens
@@ -13,12 +15,22 @@ class TokenGT(nn.Module):
             num_layers (int): Number of Transformer encoder layers.
         """
         super(TokenGT, self).__init__()
-        self.token_proj = nn.Linear(token_in_dim, d_model)
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True
+        # Folloing TokenGT, use input dropout
+        self.token_proj = nn.Sequential(
+            nn.Linear(token_in_dim, d_model),
+            nn.Dropout(input_dropout),
         )
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-        self.pred_head = nn.Linear(d_model, 1)
+        self.type_identifier = nn.Parameter()
+        # Following TokenGT, use GeLU and layernorm-first. Following Llama, use d_ff = d_model * 3.5
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model, nhead=nhead, dim_feedforward=3.5 * d_model, activation=activation, dropout=dropout, batch_first=True, norm_first=True,
+        )
+        self.transformer = EarlyExitTransformerEncoder(encoder_layer, num_layers=num_layers)
+        # Following TokenGT, use layernorm before linear
+        self.pred_head = nn.Sequential(
+            nn.LayerNorm(d_model),
+            nn.Linear(d_model, 1),
+        )
 
     def forward(self, data):
         """
