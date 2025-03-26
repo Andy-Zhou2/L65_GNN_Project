@@ -39,6 +39,7 @@ def train_model(cfg: DictConfig):
 
     # Set random seeds for reproducibility.
     torch.manual_seed(cfg.seed)
+    np.random.seed(cfg.seed)
     random.seed(cfg.seed)
 
     # Token generation parameters.
