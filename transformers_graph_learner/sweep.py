@@ -2,7 +2,7 @@ import wandb
 import os
 from hydra import initialize, compose
 
-from train_model import train_model
+from .train_model import train_model
 
 
 def sweep_train():

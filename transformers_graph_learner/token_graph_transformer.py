@@ -22,14 +22,14 @@ class TokenGT(nn.Module):
         self.d_model = d_model
         self.d_e = d_model if d_e is None else d_e
         # Folloing TokenGT, use input dropout
+        self.type_embedding = nn.Embedding(2, d_model)
         self.token_proj = nn.Sequential(
             nn.Linear(token_in_dim, d_model),
             nn.Dropout(input_dropout),
         )
-        self.type_embedding = nn.Embedding(2, d_model)
         # Following TokenGT, use GeLU and layernorm-first. Following Llama, use d_ff = d_model * 3.5
         encoder_layer = nn.TransformerEncoderLayer(
-            d_model=d_model, nhead=nhead, dim_feedforward=3.5 * d_model, activation=activation, dropout=dropout, batch_first=True, norm_first=True,
+            d_model=d_model, nhead=nhead, dim_feedforward=int(3.5 * d_model), activation=activation, dropout=dropout, batch_first=True, norm_first=True,
         )
         self.transformer = EarlyExitTransformerEncoder(encoder_layer, num_layers=num_layers)
         # Following TokenGT, use layernorm before linear
@@ -56,7 +56,7 @@ class TokenGT(nn.Module):
 
         # Append type identifiers
         node_edge_type = torch.ones_like(attn_mask, dtype=torch.int, device=tokens.device)  # [B, num_tokens]
-        for b in len(node_edge_type):
+        for b in range(len(node_edge_type)):
             node_edge_type[b][:node_count[b]] = 0
         type_id = self.type_embedding(node_edge_type)  # [B, num_tokens, d_e]
         tokens = torch.cat((tokens, type_id), dim=-1)  # [B, num_tokens, token_in_dim]

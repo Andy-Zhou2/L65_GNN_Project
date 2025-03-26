@@ -72,7 +72,6 @@ class SSSPDataset(torch.utils.data.Dataset):
                 # randomly flip eigvec's signs
                 signs = torch.where(torch.randint(0, 2, (eigvec.size(1),)) == 0, -1, 1)  # shape: [num_nodes]
                 P = eigvec.to(torch.float) * signs[None, :]
-                # TODO: deal with d_p != n
                 if num_nodes < self.d_p:
                     pad = torch.zeros(num_nodes, self.d_p - num_nodes)
                     P = torch.cat([P, pad], dim=-1)

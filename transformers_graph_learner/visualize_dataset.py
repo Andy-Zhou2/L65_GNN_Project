@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
-from graph_gen import SSSPDataset
+from .graph_gen import SSSPDataset
 
 
 def visualize_graph(sample):

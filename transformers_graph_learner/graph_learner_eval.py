@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
-from graph_gen import SSSPDataset
-from token_graph_transformer import TokenGT
-from evaluate_model import evaluate_on_graph
+from .graph_gen import SSSPDataset
+from .token_graph_transformer import TokenGT
+from .evaluate_model import evaluate_on_graph
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="config")

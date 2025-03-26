@@ -1,7 +1,7 @@
 import torch
 
 from ..transformers_graph_learner.token_graph_transformer import TokenGT
-from earlyexit_transformer_encoder import EarlyExitTransformerEncoder
+from .earlyexit_transformer_encoder import EarlyExitTransformerEncoder
 
 
 

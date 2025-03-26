@@ -3,7 +3,7 @@ import torch
 import networkx as nx
 import matplotlib.pyplot as plt
 
-from utils import to_device
+from .utils import to_device
 
 
 def evaluate(loader, model, criterion, device):

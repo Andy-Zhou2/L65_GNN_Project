@@ -12,10 +12,10 @@ import numpy as np
 import pytorch_warmup as warmup
 import time
 
-from graph_gen import SSSPDataset, collate_fn
-from token_graph_transformer import TokenGT
-from utils import to_device
-from evaluate_model import evaluate, evaluate_on_graph
+from .graph_gen import SSSPDataset, collate_fn
+from .token_graph_transformer import TokenGT
+from .utils import to_device
+from .evaluate_model import evaluate, evaluate_on_graph
 
 
 def train_model(cfg: DictConfig):

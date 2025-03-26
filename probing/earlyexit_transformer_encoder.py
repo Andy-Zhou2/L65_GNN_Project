@@ -16,7 +16,7 @@ class EarlyExitTransformerEncoder(torch.nn.Module):
         self,
         encoder_layer: "torch.nn.TransformerEncoderLayer",
         num_layers: int,
-        norm: Optional[torch.Module] = None,
+        norm: Optional[torch.nn.Module] = None,
         enable_nested_tensor: bool = True,
         mask_check: bool = True,
     ) -> None:
