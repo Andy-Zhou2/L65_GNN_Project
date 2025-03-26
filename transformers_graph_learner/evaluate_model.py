@@ -27,19 +27,23 @@ def evaluate_on_graph(model, test_dataset, device):
     sample_data = test_dataset[sample_idx]
     sample_data["tokens"] = sample_data["tokens"].to(device).unsqueeze(0)
     sample_data["y"] = sample_data["y"].to(device)
-    sample_data["attn_mask"] = torch.ones(sample_data["tokens"].size()[1]).to(device).unsqueeze(0)
-    sample_data["node_count"] = torch.tensor(sample_data["node_count"]).to(device).unsqueeze(0)
+    sample_data["attn_mask"] = (
+        torch.ones(sample_data["tokens"].size()[1]).to(device).unsqueeze(0)
+    )
+    sample_data["node_count"] = (
+        torch.tensor(sample_data["node_count"]).to(device).unsqueeze(0)
+    )
 
     model.eval()
     with torch.no_grad():
         predicted_distances = model(sample_data).cpu()[0]
-    true_distances = sample_data['y'].cpu()
+    true_distances = sample_data["y"].cpu()
 
     # Convert PyG Data object to a NetworkX graph.
-    edge_index_np = sample_data['edge_index'].cpu().numpy()
-    edge_attr_np = sample_data['edge_attr'].cpu().numpy()
+    edge_index_np = sample_data["edge_index"].cpu().numpy()
+    edge_attr_np = sample_data["edge_attr"].cpu().numpy()
     G_nx = nx.Graph()
-    num_nodes = sample_data['node_count']
+    num_nodes = sample_data["node_count"]
     G_nx.add_nodes_from(range(num_nodes))
 
     # Add edges (ensuring each undirected edge appears only once) and record edge weights.
@@ -61,13 +65,15 @@ def evaluate_on_graph(model, test_dataset, device):
     pos = nx.spring_layout(G_nx)
 
     plt.figure(figsize=(10, 10))
-    nx.draw_networkx_nodes(G_nx, pos, node_color='lightblue', node_size=500)
+    nx.draw_networkx_nodes(G_nx, pos, node_color="lightblue", node_size=500)
     nx.draw_networkx_edges(G_nx, pos, width=1.0, alpha=0.7)
     nx.draw_networkx_labels(G_nx, pos, labels=node_labels, font_size=10)
-    nx.draw_networkx_edge_labels(G_nx, pos, edge_labels=edge_labels, font_color='red', font_size=8)
+    nx.draw_networkx_edge_labels(
+        G_nx, pos, edge_labels=edge_labels, font_color="red", font_size=8
+    )
 
     plt.title("Graph Visualization: True vs Predicted Distances with Edge Weights")
-    plt.axis('off')
+    plt.axis("off")
     plt.show()
 
     # Plot errors and distributions.
@@ -77,15 +83,27 @@ def evaluate_on_graph(model, test_dataset, device):
 
     # Histogram of prediction errors.
     plt.subplot(1, 2, 1)
-    plt.hist(errors.numpy(), bins=20, edgecolor='k')
+    plt.hist(errors.numpy(), bins=20, edgecolor="k")
     plt.title("Histogram of Prediction Errors")
     plt.xlabel("Error (Predicted - True)")
     plt.ylabel("Frequency")
 
     # Distribution of true and predicted distances.
     plt.subplot(1, 2, 2)
-    plt.hist(true_distances.numpy(), bins=20, alpha=0.6, label="True Distances", edgecolor='k')
-    plt.hist(predicted_distances.numpy(), bins=20, alpha=0.6, label="Predicted Distances", edgecolor='k')
+    plt.hist(
+        true_distances.numpy(),
+        bins=20,
+        alpha=0.6,
+        label="True Distances",
+        edgecolor="k",
+    )
+    plt.hist(
+        predicted_distances.numpy(),
+        bins=20,
+        alpha=0.6,
+        label="Predicted Distances",
+        edgecolor="k",
+    )
     plt.title("Distribution of Distances")
     plt.xlabel("Distance")
     plt.ylabel("Frequency")

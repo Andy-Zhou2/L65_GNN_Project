@@ -7,6 +7,7 @@ import shutil
 
 from train_model import train_model
 
+
 # os.environ["WANDB_MODE"] = "disabled"
 
 
@@ -24,7 +25,7 @@ def main(cfg: DictConfig):
 
     for file_path in src_py_files:
         shutil.copy(file_path, output_dir)
-    shutil.copy('./configs/config.yaml', output_dir)
+    shutil.copy("./configs/config.yaml", output_dir)
 
     train_model(cfg)
 

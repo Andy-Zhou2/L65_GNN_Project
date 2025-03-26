@@ -11,11 +11,11 @@ def sweep_train():
             cfg = compose(config_name="config")
 
         # Extract hyperparameters from wandb config with defaults.
-        print('wandb config:', wandb.config)
-        seed = wandb.config['seed']
-        nhead = wandb.config['model.nhead']
-        num_layers = wandb.config['model.num_layers']
-        n_nodes_range = wandb.config['dataset.n_nodes_range']
+        print("wandb config:", wandb.config)
+        seed = wandb.config["seed"]
+        nhead = wandb.config["model.nhead"]
+        num_layers = wandb.config["model.num_layers"]
+        n_nodes_range = wandb.config["dataset.n_nodes_range"]
 
         custom_name = f"{num_layers} x {nhead} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) seed {seed}"
         wandb.run.name = custom_name
@@ -27,7 +27,6 @@ def sweep_train():
         cfg.dataset.n_nodes_range = n_nodes_range
 
         train_model(cfg)
-
 
 
 if __name__ == "__main__":
@@ -58,6 +57,10 @@ if __name__ == "__main__":
     # print(f"Sweep ID: {sweep_id}")
 
     # Start the sweep agent; count sets how many runs to execute.
-    wandb.agent("vf4vneqk", function=sweep_train,
-                project='transformer-graph-learner', entity='wz337',
-                count=5000)
+    wandb.agent(
+        "vf4vneqk",
+        function=sweep_train,
+        project="transformer-graph-learner",
+        entity="wz337",
+        count=5000,
+    )

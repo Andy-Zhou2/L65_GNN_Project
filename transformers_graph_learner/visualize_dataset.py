@@ -9,10 +9,10 @@ from graph_gen import SSSPDataset
 
 
 def visualize_graph(sample):
-    edge_index = sample['edge_index']
-    edge_attr = sample['edge_attr']
-    node_count = sample['node_count']
-    source_node = sample['x'].argmax().item()
+    edge_index = sample["edge_index"]
+    edge_attr = sample["edge_attr"]
+    node_count = sample["node_count"]
+    source_node = sample["x"].argmax().item()
 
     # Create NetworkX graph
     G = nx.Graph()
@@ -31,25 +31,32 @@ def visualize_graph(sample):
     pos = nx.spring_layout(G, seed=42)
 
     # Draw nodes
-    nx.draw_networkx_nodes(G, pos, node_size=500, node_color='lightblue')
-    nx.draw_networkx_nodes(G, pos, nodelist=[source_node], node_color='orange', node_size=600, label='Source')
+    nx.draw_networkx_nodes(G, pos, node_size=500, node_color="lightblue")
+    nx.draw_networkx_nodes(
+        G,
+        pos,
+        nodelist=[source_node],
+        node_color="orange",
+        node_size=600,
+        label="Source",
+    )
 
     # Draw edges and edge labels
     nx.draw_networkx_edges(G, pos)
-    edge_labels = nx.get_edge_attributes(G, 'weight')
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color='red')
+    edge_labels = nx.get_edge_attributes(G, "weight")
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color="red")
 
     # Draw node labels
     node_labels = {node: str(node) for node in G.nodes()}
-    nx.draw_networkx_labels(G, pos, labels=node_labels, font_weight='bold')
+    nx.draw_networkx_labels(G, pos, labels=node_labels, font_weight="bold")
 
-    plt.title(f"Graph Visualization: Number Nodes: {node_count}, "
-              f"Source Node: {source_node}, Diameter: {nx.diameter(G)}")
+    plt.title(
+        f"Graph Visualization: Number Nodes: {node_count}, "
+        f"Source Node: {source_node}, Diameter: {nx.diameter(G)}"
+    )
     plt.legend(scatterpoints=1)
-    plt.axis('off')
+    plt.axis("off")
     plt.show()
-
-
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="config")
@@ -83,12 +90,12 @@ def main(cfg: DictConfig):
     max_diameter = 0
     max_diameter_graph = None
     for sample in dataset:
-        edge_index = sample['edge_index']
-        node_count = sample['node_count']
+        edge_index = sample["edge_index"]
+        node_count = sample["node_count"]
         G = nx.Graph()
         G.add_nodes_from(range(node_count))
         added_edges = set()
-        for (u, v) in edge_index.t().numpy():
+        for u, v in edge_index.t().numpy():
             edge = tuple(sorted((u, v)))
             if edge not in added_edges:
                 G.add_edge(u, v)
@@ -99,7 +106,6 @@ def main(cfg: DictConfig):
             max_diameter_graph = sample
     print(f"Maximum diameter in the dataset: {max_diameter}")
     visualize_graph(max_diameter_graph)
-
 
 
 if __name__ == "__main__":

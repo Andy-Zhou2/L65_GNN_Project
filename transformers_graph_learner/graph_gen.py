@@ -15,7 +15,9 @@ class SSSPDataset(torch.utils.data.Dataset):
         self.num_graphs = num_graphs
         self.d_p = d_p
         self.d_e = d_e
-        self.in_feat_dim = 1  # Node and edge features are 1-dimensional (e.g. source flag and weight)
+        self.in_feat_dim = (
+            1  # Node and edge features are 1-dimensional (e.g. source flag and weight)
+        )
         self.n_nodes_range = n_nodes_range  # Must be defined before generating graphs
 
         self.data_list = [self.generate_graph() for _ in range(num_graphs)]
@@ -30,14 +32,14 @@ class SSSPDataset(torch.utils.data.Dataset):
 
         # --- Assign random weights to edges ---
         for u, v in G.edges():
-            G[u][v]['weight'] = float(random.randint(1, 5))
+            G[u][v]["weight"] = float(random.randint(1, 5))
 
         # --- Choose a random source node and compute shortest paths ---
         source = random.choice(list(G.nodes()))
         path_lengths = nx.single_source_dijkstra_path_length(G, source)
         y = torch.tensor(
-            [path_lengths.get(i, float('inf')) for i in range(num_nodes)],
-            dtype=torch.float
+            [path_lengths.get(i, float("inf")) for i in range(num_nodes)],
+            dtype=torch.float,
         )
 
         # --- Create node features (source flag) ---
@@ -59,13 +61,15 @@ class SSSPDataset(torch.utils.data.Dataset):
         # --- Construct node tokens ---
         # Each node token: [node feature, P[node], P[node], fixed node type embedding]
         node_type = torch.zeros((num_nodes, self.d_e))  # fixed type embedding for nodes
-        node_tokens = torch.cat([x, P, P, node_type], dim=-1)  # shape: [num_nodes, 1 + 2*d_p + d_e]
+        node_tokens = torch.cat(
+            [x, P, P, node_type], dim=-1
+        )  # shape: [num_nodes, 1 + 2*d_p + d_e]
 
         # --- Construct edge tokens ---
         edge_index = []
         edge_attr = []
         for u, v in G.edges():
-            weight = G[u][v]['weight']
+            weight = G[u][v]["weight"]
             # Since the graph is undirected, add both directions.
             edge_index.append([u, v])
             edge_index.append([v, u])
@@ -81,13 +85,21 @@ class SSSPDataset(torch.utils.data.Dataset):
         P_source = P[edge_source]  # shape: [num_edges, d_p]
         P_target = P[edge_target]  # shape: [num_edges, d_p]
         edge_type = torch.ones((num_edges, self.d_e))  # fixed type embedding for edges
-        edge_tokens = torch.cat([edge_attr, P_source, P_target, edge_type], dim=-1)  # shape: [num_edges, 1+2*d_p+d_e]
+        edge_tokens = torch.cat(
+            [edge_attr, P_source, P_target, edge_type], dim=-1
+        )  # shape: [num_edges, 1+2*d_p+d_e]
 
         # --- Combine tokens (nodes first, then edges) ---
         tokens = torch.cat([node_tokens, edge_tokens], dim=0)
 
-        return {'tokens': tokens, 'node_count': num_nodes, 'y': y,
-                'x': x, 'edge_index': edge_index, 'edge_attr': edge_attr}
+        return {
+            "tokens": tokens,
+            "node_count": num_nodes,
+            "y": y,
+            "x": x,
+            "edge_index": edge_index,
+            "edge_attr": edge_attr,
+        }
 
     def __len__(self):
         return self.num_graphs
@@ -137,5 +149,5 @@ def collate_fn(batch):
         "tokens": batch_tokens,
         "attn_mask": batch_masks,
         "y": batch_y,
-        "node_count": batch_node_counts
+        "node_count": batch_node_counts,
     }

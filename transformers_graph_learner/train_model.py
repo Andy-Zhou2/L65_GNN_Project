@@ -3,6 +3,7 @@ import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
 # from torch_geometric.data import DataLoader
 from torch.utils.data import DataLoader, Dataset
 import wandb
@@ -28,11 +29,13 @@ def train_model(cfg: DictConfig):
     custom_name = f"{num_layers} x {nhead} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) seed {seed}"
 
     # Initialize Weights & Biases.
-    wandb.init(project=cfg.wandb.project,
-               entity=cfg.wandb.entity,
-               name=custom_name,
-               group=cfg.wandb.group,
-               config=OmegaConf.to_container(cfg, resolve=True))
+    wandb.init(
+        project=cfg.wandb.project,
+        entity=cfg.wandb.entity,
+        name=custom_name,
+        group=cfg.wandb.group,
+        config=OmegaConf.to_container(cfg, resolve=True),
+    )
 
     # Set random seeds for reproducibility.
     torch.manual_seed(cfg.seed)
@@ -45,7 +48,12 @@ def train_model(cfg: DictConfig):
     token_in_dim = in_feat_dim + 2 * d_p + d_e
 
     # Create the dataset.
-    dataset = SSSPDataset(num_graphs=cfg.dataset.num_graphs, d_p=d_p, d_e=d_e, n_nodes_range=cfg.dataset.n_nodes_range)
+    dataset = SSSPDataset(
+        num_graphs=cfg.dataset.num_graphs,
+        d_p=d_p,
+        d_e=d_e,
+        n_nodes_range=cfg.dataset.n_nodes_range,
+    )
     print(f"Total graphs in dataset: {len(dataset)}")
 
     # Split dataset into train and test (e.g., 80/20 split).
@@ -89,7 +97,7 @@ def train_model(cfg: DictConfig):
     scheduler = optim.lr_scheduler.CosineAnnealingLR(
         optimizer,
         T_max=cfg.scheduler.T_max,  # Total number of iterations or epochs
-        eta_min=cfg.scheduler.eta_min  # Minimum learning rate
+        eta_min=cfg.scheduler.eta_min,  # Minimum learning rate
     )
     warmup_scheduler = warmup.UntunedLinearWarmup(optimizer)
     criterion = nn.MSELoss()
@@ -115,8 +123,10 @@ def train_model(cfg: DictConfig):
 
         # Save the model based on the configuration.
         if (epoch + 1) % cfg.training.save_every == 0:
-            model_path =os.path.join(cfg.paths.models,
-                                     f"{cfg.model.num_layers}_layers_{cfg.model.nhead}_heads_{cfg.training.lr}_lr")
+            model_path = os.path.join(
+                cfg.paths.models,
+                f"{cfg.model.num_layers}_layers_{cfg.model.nhead}_heads_{cfg.training.lr}_lr",
+            )
 
             os.makedirs(model_path, exist_ok=True)
             save_path = os.path.join(model_path, f"model_{epoch + 1}.pth")
@@ -126,10 +136,18 @@ def train_model(cfg: DictConfig):
         current_lr = scheduler.get_last_lr()[0]
         current_lr_log = np.log10(current_lr)
         print(
-            f"Epoch {epoch + 1}/{cfg.training.num_epochs}, Train Loss: {avg_train_loss:.4f}, Test Loss: {test_loss:.4f}, Learning Rate: 1e{current_lr_log}")
-        wandb.log({"train_loss": avg_train_loss, "test_loss": test_loss, "learning_rate": current_lr,
-                   "learning_rate_log": current_lr_log, "time": time.time() - training_start_time
-                   }, step=epoch)
+            f"Epoch {epoch + 1}/{cfg.training.num_epochs}, Train Loss: {avg_train_loss:.4f}, Test Loss: {test_loss:.4f}, Learning Rate: 1e{current_lr_log}"
+        )
+        wandb.log(
+            {
+                "train_loss": avg_train_loss,
+                "test_loss": test_loss,
+                "learning_rate": current_lr,
+                "learning_rate_log": current_lr_log,
+                "time": time.time() - training_start_time,
+            },
+            step=epoch,
+        )
         if current_lr <= 1e-8:
             print("Learning rate reached below 1e-8. Stopping training.")
             break

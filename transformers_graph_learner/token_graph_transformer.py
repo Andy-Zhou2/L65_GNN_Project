@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 
+
 class TokenGT(nn.Module):
     def __init__(self, token_in_dim, d_model, nhead, num_layers, dropout=0.1):
         """
@@ -39,7 +40,7 @@ class TokenGT(nn.Module):
         tokens = self.token_proj(tokens)  # [B, num_tokens, d_model]
 
         # Create a src_key_padding_mask: True for padded positions.
-        src_key_padding_mask = (attn_mask == 0)  # [B, num_tokens]
+        src_key_padding_mask = attn_mask == 0  # [B, num_tokens]
 
         # Pass tokens through the transformer.
         tokens = self.transformer(tokens, src_key_padding_mask=src_key_padding_mask)
@@ -52,9 +53,10 @@ class TokenGT(nn.Module):
         # For each sample i, we want to keep only the first node_count[i] tokens.
         B, T = pred_all.size()
         device = pred_all.device
-        node_mask = (torch.arange(T, device=device).unsqueeze(0) < node_count.unsqueeze(1)).float()  # [B, T]
+        node_mask = (
+            torch.arange(T, device=device).unsqueeze(0) < node_count.unsqueeze(1)
+        ).float()  # [B, T]
 
         # Multiply elementwise so that positions beyond the actual nodes are zeroed out.
         pred = pred_all * node_mask  # [B, num_tokens]
-        return pred[:, :node_count.max().item()]
-
+        return pred[:, : node_count.max().item()]

@@ -12,6 +12,7 @@ from graph_gen import SSSPDataset
 from token_graph_transformer import TokenGT
 from evaluate_model import evaluate_on_graph
 
+
 @hydra.main(version_base=None, config_path="configs", config_name="config")
 def main(cfg: DictConfig):
     # Print the loaded configuration.
@@ -51,9 +52,10 @@ def main(cfg: DictConfig):
         num_layers=cfg.model.num_layers,
     ).to(device)
 
-    model.load_state_dict(torch.load('models/model_140.pth', map_location=device))
+    model.load_state_dict(torch.load("models/model_140.pth", map_location=device))
 
     evaluate_on_graph(model, test_dataset, device)
+
 
 if __name__ == "__main__":
     main()
