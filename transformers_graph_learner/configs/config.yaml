@@ -1,3 +1,6 @@
+defaults:
+  - override hydra/launcher: joblib
+
 seed: 42
 
 wandb:
@@ -7,8 +10,9 @@ wandb:
 
 dataset:
   num_graphs: 10000
-  d_p: 10
-  d_e: 10
+  d_p: 64
+  d_e: 1024
+  node_id_encode: "orf"
   in_feat_dim: 1
   split: 0.8
   n_nodes_range: [10, 10]
@@ -19,13 +23,16 @@ training:
   num_epochs: *num_epochs
   batch_size: 1024
   lr: 1e-3
+  weight_decay: 0.1
   device: "cuda"  # set to "cpu" if you don't want to use CUDA
   save_every: 50
 
 model:
-  d_model: 512
-  nhead: 8
+  d_model: 1024
+  nhead: 16
   num_layers: 3
+  dropout: 0.1
+  input_dropout: 0.1
 
 scheduler:
   factor: 0.1
