@@ -1,14 +1,18 @@
+import numpy as np
 import torch
 import networkx as nx
 import random
+from torch_geometric.utils import get_laplacian
 
 
 class SSSPDataset(torch.utils.data.Dataset):
-    def __init__(self, num_graphs=100, d_p=8, n_nodes_range=(20, 20)):
+    def __init__(self, num_graphs=100, d_p=8, n_nodes_range=(20, 20), node_identifier_encoding="one-hot"):
         """
         Args:
             num_graphs (int): Number of graphs in the dataset.
             d_p (int): Dimensionality of the orthonormal node identifiers.
+            node_identifier_encoding (str): Encoding method of node identifier P.
+              One of ["one-hot", "orf", "laplacian"].
         """
         self.num_graphs = num_graphs
         self.d_p = d_p
@@ -16,10 +20,13 @@ class SSSPDataset(torch.utils.data.Dataset):
             1  # Node and edge features are 1-dimensional (e.g. source flag and weight)
         )
         self.n_nodes_range = n_nodes_range  # Must be defined before generating graphs
+        assert node_identifier_encoding in ["one-hot", "orf", "laplacian"], f'Unsupported node_identifier_encoding {node_identifier_encoding}, should be one of ["one-hot", "orf", "laplacian"]'
+        self.node_identifier_encoding = node_identifier_encoding
 
-        self.data_list = [self.generate_graph() for _ in range(num_graphs)]
+        self.data_list = [self.generate_graph(self.node_identifier_encoding) for _ in range(num_graphs)]
 
-    def generate_graph(self):
+    @torch.no_grad()
+    def generate_graph(self, node_identifier_encoding):
         # --- Generate a random connected graph ---
         num_nodes = random.randint(*self.n_nodes_range)
         k = min(4, num_nodes - 1)
@@ -44,18 +51,37 @@ class SSSPDataset(torch.utils.data.Dataset):
         x[source] = 1.0
 
         # --- Generate orthonormal features for nodes ---
-        # # Create a random matrix and use QR decomposition.
-        # A = torch.randn(num_nodes, self.d_p)
-        # Q, _ = torch.linalg.qr(A)
-        # P = Q  # shape: [num_nodes, d_p]
-        # if num_nodes < self.d_p:
-        #     pad = torch.zeros(num_nodes, self.d_p - num_nodes)
-        #     P = torch.cat([P, pad], dim=-1)
-
-        # TODO: ORF and Laplacian
-        # TODO: deal with d_p != n
-        # Use one-hot encoding for nodes
-        P = torch.eye(num_nodes, self.d_p, dtype=torch.float)
+        match node_identifier_encoding:
+            case "one-hot":
+                P = torch.eye(num_nodes, self.d_p, dtype=torch.float)
+            case "orf":
+                A = torch.randn(num_nodes, self.d_p)
+                Q, _ = torch.linalg.qr(A)
+                P = Q  # shape: [num_nodes, d_p]
+                if num_nodes < self.d_p:
+                    pad = torch.zeros(num_nodes, self.d_p - num_nodes)
+                    P = torch.cat([P, pad], dim=-1)
+            case "laplacian":
+                A = torch.full((num_nodes, num_nodes), float("inf"))
+                for u, v, w in G.edges.data("weight"):
+                    A[u, v] = w
+                in_degree = A.isfinite().sum(dim=1).view(-1)
+                N = torch.diag(in_degree.clip(1) ** -0.5)
+                L = torch.eye(num_nodes) - N @ A @ N
+                _, eigvec = torch.linalg.eigh(L)  # shape: [num_nodes, num_nodes], eigvec has columns as eigenvectors
+                # randomly flip eigvec's signs
+                signs = torch.where(torch.randint(0, 2, (eigvec.size(1),)) == 0, -1, 1)  # shape: [num_nodes]
+                P = eigvec.to(torch.float) * signs[None, :]
+                # TODO: deal with d_p != n
+                if num_nodes < self.d_p:
+                    pad = torch.zeros(num_nodes, self.d_p - num_nodes)
+                    P = torch.cat([P, pad], dim=-1)
+                elif num_nodes > self.d_p:
+                    P = torch.cat([P[:, :self.d_p//2], P[:, (self.d_p-self.d_p//2):]], dim=-1)
+            case _:
+                raise ValueError(f"Invalid node identifier encoding {node_identifier_encoding}")
+            
+        assert P.shape == (num_nodes, self.d_p)
 
         # --- Construct node tokens ---
         # Each node token: [node feature, P[node], P[node], fixed node type embedding]

@@ -9,6 +9,7 @@ dataset:
   num_graphs: 10000
   d_p: 64
   d_e: 1024
+  node_id_encode: "orf"
   in_feat_dim: 1
   split: 0.8
   n_nodes_range: [10, 10]

@@ -44,6 +44,7 @@ def train_model(cfg: DictConfig):
     # Token generation parameters.
     d_p = cfg.dataset.d_p
     d_e = cfg.dataset.d_e
+    node_id_encode = cfg.dataset.node_id_encode
     in_feat_dim = cfg.dataset.in_feat_dim
     token_in_dim = in_feat_dim + 2 * d_p + d_e
 
@@ -52,6 +53,7 @@ def train_model(cfg: DictConfig):
         num_graphs=cfg.dataset.num_graphs,
         d_p=d_p,
         n_nodes_range=cfg.dataset.n_nodes_range,
+        node_identifier_encoding=node_id_encode,
     )
     print(f"Total graphs in dataset: {len(dataset)}")
 
