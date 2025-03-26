@@ -152,8 +152,5 @@ def train_model(cfg: DictConfig):
             },
             step=epoch,
         )
-        if current_lr <= 1e-8:
-            print("Learning rate reached below 1e-8. Stopping training.")
-            break
 
     # evaluate_on_graph(model, test_dataset, device)
