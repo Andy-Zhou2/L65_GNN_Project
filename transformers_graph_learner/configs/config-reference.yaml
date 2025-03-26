@@ -20,6 +20,7 @@ training:
   num_epochs: *num_epochs
   batch_size: 1024
   lr: 1e-3
+  weight_decay: 0.1
   device: "cuda"  # set to "cpu" if you don't want to use CUDA
   save_every: 50
 
@@ -27,6 +28,8 @@ model:
   d_model: 1024
   nhead: 16
   num_layers: 3
+  dropout: 0.1
+  input_dropout: 0.1
 
 scheduler:
   factor: 0.1

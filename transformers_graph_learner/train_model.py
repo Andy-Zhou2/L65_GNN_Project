@@ -92,10 +92,12 @@ def train_model(cfg: DictConfig):
         nhead=cfg.model.nhead,
         num_layers=cfg.model.num_layers,
         d_e=d_e,
+        dropout=cfg.model.dropout,
+        input_dropout=cfg.model.input_dropout,
     ).to(device)
 
     # Define optimizer, scheduler, and loss function.
-    optimizer = optim.Adam(model.parameters(), lr=cfg.training.lr)
+    optimizer = optim.AdamW(model.parameters(), lr=cfg.training.lr, weight_decay=cfg.training.weight_decay)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(
         optimizer,
         T_max=cfg.scheduler.T_max,  # Total number of iterations or epochs
