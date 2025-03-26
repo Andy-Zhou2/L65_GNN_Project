@@ -2,6 +2,8 @@ seed: 42
 
 wandb:
   project: "transformer-graph-learner"
+  entity: "L65_Project"
+  group: "test"
 
 dataset:
   num_graphs: 10000

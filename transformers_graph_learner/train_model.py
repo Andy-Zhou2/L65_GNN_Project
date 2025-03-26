@@ -21,8 +21,18 @@ def train_model(cfg: DictConfig):
     # Print the loaded configuration.
     print(OmegaConf.to_yaml(cfg))
 
+    num_layers = cfg.model.num_layers
+    nhead = cfg.model.nhead
+    n_nodes_range = cfg.dataset.n_nodes_range
+    seed = cfg.seed
+    custom_name = f"{num_layers} x {nhead} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) seed {seed}"
+
     # Initialize Weights & Biases.
-    wandb.init(project=cfg.wandb.project, config=OmegaConf.to_container(cfg, resolve=True))
+    wandb.init(project=cfg.wandb.project,
+               entity=cfg.wandb.entity,
+               name=custom_name,
+               group=cfg.wandb.group,
+               config=OmegaConf.to_container(cfg, resolve=True))
 
     # Set random seeds for reproducibility.
     torch.manual_seed(cfg.seed)
@@ -124,4 +134,4 @@ def train_model(cfg: DictConfig):
             print("Learning rate reached below 1e-8. Stopping training.")
             break
 
-    evaluate_on_graph(model, test_dataset, device)
+    # evaluate_on_graph(model, test_dataset, device)
