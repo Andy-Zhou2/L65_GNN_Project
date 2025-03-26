@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-# from torch_geometric.data import DataLoader
 from torch.utils.data import DataLoader, Dataset
 import wandb
 from omegaconf import DictConfig, OmegaConf
@@ -99,12 +98,13 @@ def train_model(cfg: DictConfig):
 
     # Define optimizer, scheduler, and loss function.
     optimizer = optim.AdamW(model.parameters(), lr=cfg.training.lr, weight_decay=cfg.training.weight_decay)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(
-        optimizer,
-        T_max=cfg.scheduler.T_max,  # Total number of iterations or epochs
-        eta_min=cfg.scheduler.eta_min,  # Minimum learning rate
-    )
-    warmup_scheduler = warmup.UntunedLinearWarmup(optimizer)
+
+    def lr_lambda(step, warmup_steps, t_total):
+        if step < warmup_steps:
+            return float(step) / float(max(1, warmup_steps))
+        return max(0.0, float(t_total - step) / float(max(1, t_total - warmup_steps)))
+
+    scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda step: lr_lambda(step, cfg.scheduler.warmup_steps, cfg.training.num_epochs))
     criterion = nn.MSELoss()
 
     training_start_time = time.time()
@@ -123,8 +123,7 @@ def train_model(cfg: DictConfig):
 
         avg_train_loss = total_loss / len(train_loader)
         test_loss = evaluate(test_loader, model, criterion, device)
-        with warmup_scheduler.dampening():
-            scheduler.step()
+        scheduler.step()
 
         # Save the model based on the configuration.
         if (epoch + 1) % cfg.training.save_every == 0:
