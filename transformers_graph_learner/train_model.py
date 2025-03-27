@@ -6,6 +6,7 @@ import torch.optim as optim
 
 from torch.utils.data import DataLoader, Dataset
 import wandb
+from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, OmegaConf
 import numpy as np
 import pytorch_warmup as warmup
@@ -25,7 +26,7 @@ def train_model(cfg: DictConfig):
     nhead = cfg.model.nhead
     n_nodes_range = cfg.dataset.n_nodes_range
     seed = cfg.seed
-    custom_name = f"{num_layers} x {nhead} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) seed {seed}"
+    custom_name = f"{num_layers} x {nhead} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) seed {seed} lr {cfg.training.lr}"
 
     # Initialize Weights & Biases.
     wandb.init(
@@ -129,7 +130,8 @@ def train_model(cfg: DictConfig):
         if (epoch + 1) % cfg.training.save_every == 0:
             model_path = os.path.join(
                 cfg.paths.models,
-                f"{cfg.model.num_layers}_layers_{cfg.model.nhead}_heads_{cfg.training.lr}_lr",
+                "/".join(HydraConfig.get().runtime.output_dir.split("/")[-2:]),
+                # f"{cfg.model.num_layers}_layers_{cfg.model.nhead}_heads_{cfg.training.lr}_lr",
             )
 
             os.makedirs(model_path, exist_ok=True)
@@ -139,9 +141,10 @@ def train_model(cfg: DictConfig):
 
         current_lr = scheduler.get_last_lr()[0]
         current_lr_log = np.log10(current_lr)
-        print(
-            f"Epoch {epoch + 1}/{cfg.training.num_epochs}, Train Loss: {avg_train_loss:.4f}, Test Loss: {test_loss:.4f}, Learning Rate: 1e{current_lr_log}"
-        )
+        if (epoch + 1) % 10 == 0:
+            print(
+                f"Epoch {epoch + 1}/{cfg.training.num_epochs}, Train Loss: {avg_train_loss:.4f}, Test Loss: {test_loss:.4f}, Learning Rate: 1e{current_lr_log}"
+            )
         wandb.log(
             {
                 "train_loss": avg_train_loss,

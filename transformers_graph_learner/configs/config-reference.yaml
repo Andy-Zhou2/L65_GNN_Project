@@ -1,7 +1,7 @@
 defaults:
   - override hydra/launcher: joblib
   
-seed: 42
+seed: 1
 
 wandb:
   project: "transformer-graph-learner"
@@ -38,7 +38,7 @@ scheduler:
   factor: 0.1
   patience: 20
   T_max: *num_epochs
-  eta_min: 1e-6
+  eta_min: 0.0
 
 paths:
   models: "models"

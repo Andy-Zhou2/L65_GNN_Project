@@ -1,27 +1,27 @@
 defaults:
   - override hydra/launcher: joblib
 
-seed: 42
+seed: 1
 
 wandb:
   project: "transformer-graph-learner"
   entity: "L65_Project"
-  group: "max_epoch_investigation"
+  group: "max_epoch_search-16_nodes-lap"
 
 dataset:
-  num_graphs: 10000
+  num_graphs: 1000
   d_p: 64
   d_e: 1024
-  node_id_encode: "orf"
+  node_id_encode: "laplacian"
   in_feat_dim: 1
   split: 0.8
-  n_nodes_range: [8, 8]
+  n_nodes_range: [16, 16]
 
 
 training:
   epoch: &num_epochs 1000
   num_epochs: *num_epochs
-  batch_size: 1024
+  batch_size: 128
   lr: 2e-4
   weight_decay: 0.1
   device: "cuda"  # set to "cpu" if you don't want to use CUDA
@@ -30,7 +30,7 @@ training:
 model:
   d_model: 1024
   nhead: 16
-  num_layers: 5
+  num_layers: 3
   dropout: 0.1
   input_dropout: 0.1
 
