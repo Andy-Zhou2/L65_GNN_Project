@@ -150,13 +150,6 @@ def train_model(cfg: DictConfig):
         test_loss = evaluate(test_loader, model, criterion, device)
         scheduler.step()
 
-        if cfg.training.early_stopping.enabled:
-            early_stopping(test_loss)
-
-            if early_stopping.early_stop:
-                print("Early stopping triggered!")
-                break
-
         # Save the model based on the configuration.
         if (epoch + 1) % cfg.training.save_every == 0:
             model_path = os.path.join(
@@ -186,5 +179,13 @@ def train_model(cfg: DictConfig):
             },
             step=epoch,
         )
+
+        # Early stopping
+        if cfg.training.early_stopping.enabled:
+            early_stopping(test_loss)
+
+            if early_stopping.early_stop:
+                print("Early stopping triggered!")
+                break
 
     # evaluate_on_graph(model, test_dataset, device)
