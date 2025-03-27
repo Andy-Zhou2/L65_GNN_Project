@@ -1,0 +1,33 @@
+defaults:
+  - override hydra/launcher: joblib
+  
+seed: 42
+
+wandb:
+  project: "transformer-graph-learner"
+  entity: "L65_Project"
+  group: "debug"
+
+dataset:
+  num_graphs: 100
+  split: 0.8
+  n_nodes_range: [5, 10]
+
+
+training:
+  epoch: &num_epochs 100
+  num_epochs: *num_epochs
+  batch_size: 128
+  lr: 2e-4
+  weight_decay: 0.1
+  device: "cuda"  # set to "cpu" if you don't want to use CUDA
+
+model:
+  d_model: 512
+  num_layers: 5
+
+scheduler:
+  warmup_steps: 30  # Check the num_epochs and adjust this value accordingly
+
+paths:
+  models: "models/gcn"

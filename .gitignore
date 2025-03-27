@@ -4,6 +4,8 @@ wandb/
 .vscode/
 outputs/
 multirun/
+sssp_dataset/
+figures/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

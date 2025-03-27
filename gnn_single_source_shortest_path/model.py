@@ -5,6 +5,7 @@ from torch_geometric.data import Data
 from torch_geometric.nn import MessagePassing
 from torch_scatter import scatter_max
 
+
 # ---------------------------
 # 1. Define the MPNNLayer
 # ---------------------------
@@ -17,7 +18,7 @@ class MPNNLayer(MessagePassing):
             emb_dim (int): Dimension of node embeddings.
             edge_dim (int): Dimension of edge features (should match dataset, e.g. 1).
         """
-        super().__init__(aggr='max')
+        super().__init__(aggr="max")
         self.emb_dim = emb_dim
         self.edge_dim = edge_dim
 
@@ -28,7 +29,7 @@ class MPNNLayer(MessagePassing):
             ReLU(),
             Linear(emb_dim, emb_dim),
             BatchNorm1d(emb_dim),
-            ReLU()
+            ReLU(),
         )
 
         # MLP for updating node features: input dim = 2*emb_dim, output = emb_dim
@@ -38,7 +39,7 @@ class MPNNLayer(MessagePassing):
             ReLU(),
             Linear(emb_dim, emb_dim),
             BatchNorm1d(emb_dim),
-            ReLU()
+            ReLU(),
         )
 
     def forward(self, h, edge_index, edge_attr):
@@ -72,7 +73,7 @@ class MPNNLayer(MessagePassing):
         return self.mlp_update(update_input)
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(emb_dim={self.emb_dim})'
+        return f"{self.__class__.__name__}(emb_dim={self.emb_dim})"
 
 
 # ---------------------------
@@ -94,14 +95,13 @@ class ShortestPathModel(Module):
         self.lin_in = Linear(in_dim, emb_dim)
 
         # Create a stack of message passing layers.
-        self.convs = ModuleList([MPNNLayer(emb_dim, edge_dim) for _ in range(num_layers)])
+        self.convs = ModuleList(
+            [MPNNLayer(emb_dim, edge_dim) for _ in range(num_layers)]
+        )
 
         # Final MLP to output a scalar distance for each node.
         self.mlp_out = Sequential(
-            Linear(emb_dim, emb_dim),
-            BatchNorm1d(emb_dim),
-            ReLU(),
-            Linear(emb_dim, 1)
+            Linear(emb_dim, emb_dim), BatchNorm1d(emb_dim), ReLU(), Linear(emb_dim, 1)
         )
 
     def forward(self, data):
@@ -122,5 +122,3 @@ class ShortestPathModel(Module):
             h = h + conv(h, data.edge_index, data.edge_attr)  # residual connection
         distances = self.mlp_out(h)  # (num_nodes, 1)
         return distances.squeeze(-1)  # (num_nodes,)
-
-
