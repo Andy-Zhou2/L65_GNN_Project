@@ -134,11 +134,11 @@ class SSSPDataset(torch.utils.data.Dataset):
                     pad = torch.zeros(num_nodes, self.d_p - num_nodes)
                     P = torch.cat([P, pad], dim=-1)
                 elif num_nodes > self.d_p:
-                    P = torch.cat([P[:, :self.d_p//2], P[:, (self.d_p-self.d_p//2):]], dim=-1)
+                    P = torch.cat([P[:, :(self.d_p-self.d_p//2)], P[:, -self.d_p//2:]], dim=-1)
             case _:
                 raise ValueError(f"Invalid node identifier encoding {node_identifier_encoding}")
             
-        assert P.shape == (num_nodes, self.d_p)
+        assert P.shape == (num_nodes, self.d_p), f"{P.shape}"
 
         # --- Construct node tokens ---
         # Each node token: [node feature, P[node], P[node], fixed node type embedding]
