@@ -21,8 +21,10 @@ class TokenGT(nn.Module):
         super(TokenGT, self).__init__()
         self.d_model = d_model
         self.d_e = d_model if d_e is None else d_e
+        self.type_embedding = nn.Embedding(2, self.d_e)
+        nn.init.zeros_(self.type_embedding.weight[0])
+        nn.init.ones_(self.type_embedding.weight[1])
         # Folloing TokenGT, use input dropout
-        self.type_embedding = nn.Embedding(2, d_model)
         self.token_proj = nn.Sequential(
             nn.Linear(token_in_dim, d_model),
             nn.Dropout(input_dropout),
