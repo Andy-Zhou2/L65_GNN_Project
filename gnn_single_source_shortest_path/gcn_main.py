@@ -19,6 +19,7 @@ import wandb
 
 from .graph_gen import SSSPDataset
 from .model import ShortestPathModel
+from transformers_graph_learner.early_stopper import EarlyStopping
 
 
 def train(train_loader, model, optimizer, total_nodes_train, device):
@@ -81,7 +82,10 @@ def main(cfg: DictConfig):
         root="sssp_dataset",
         num_graphs=100,
         n_nodes_range=cfg.dataset.n_nodes_range,
-        max_hops=cfg.dataset.get("max_hops", None),
+        m=cfg.dataset.m,
+        p=cfg.dataset.p,
+        q=cfg.dataset.q,
+        max_hops=cfg.dataset.get("eccentricity", None),
     )
     print(f"Dataset size: {len(dataset)}")
     # print(dataset[0])
@@ -111,8 +115,14 @@ def main(cfg: DictConfig):
     optimizer = torch.optim.AdamW(
         model.parameters(), cfg.training.lr, weight_decay=cfg.training.weight_decay
     )
+    if cfg.training.early_stopping.enabled:
+        early_stopping = EarlyStopping(patience=cfg.training.early_stopping.patience,
+                                       verbose=cfg.training.early_stopping.verbose,
+                                       delta=cfg.training.early_stopping.min_delta)
 
     def lr_lambda(step, warmup_steps, t_total):
+        if warmup_steps is None:
+            return 1.0
         if step < warmup_steps:
             return float(step) / float(max(1, warmup_steps))
         return max(0.0, float(t_total - step) / float(max(1, t_total - warmup_steps)))
@@ -133,6 +143,17 @@ def main(cfg: DictConfig):
         )
         test_loss = test(test_loader, model, total_nodes_test, device)
         scheduler.step()
+        # Save the model based on the configuration.
+        if (epoch + 1) % cfg.training.save_every == 0:
+            model_path = os.path.join(
+                cfg.paths.models,
+                "/".join(HydraConfig.get().runtime.output_dir.split("/")[-2:]),
+                # f"{cfg.model.num_layers}_layers_{cfg.model.nhead}_heads_{cfg.training.lr}_lr",
+            )
+            os.makedirs(model_path, exist_ok=True)
+            save_path = os.path.join(model_path, f"model_{epoch + 1}.pth")
+            torch.save(model.state_dict(), save_path)
+            print(f"Model saved to {save_path}")
         current_lr = scheduler.get_last_lr()[0]
         if (epoch + 1) % 10 == 0:
             print(
@@ -148,6 +169,12 @@ def main(cfg: DictConfig):
             },
             step=epoch,
         )
+        # Early stopping
+        if cfg.training.early_stopping.enabled:
+            early_stopping(test_loss)
+            if early_stopping.early_stop:
+                print("Early stopping triggered!")
+                break
 
     # Evaluate a new graph
     # --- Select a single sample graph from the test dataset ---

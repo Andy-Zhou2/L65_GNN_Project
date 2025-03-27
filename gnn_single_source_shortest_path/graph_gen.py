@@ -11,6 +11,9 @@ class SSSPDataset(InMemoryDataset):
         root,
         num_graphs=100,
         n_nodes_range=(5, 20),
+        m=1,
+        p=0.15,
+        q=0.0,
         max_hops=None,
         transform=None,
         pre_transform=None,
@@ -18,6 +21,9 @@ class SSSPDataset(InMemoryDataset):
         self.num_graphs = num_graphs
         self.n_nodes_range = n_nodes_range  # Must be defined before generating graphs
         self.max_hops = max_hops
+        self.m = m
+        self.p = p
+        self.q = q
         super().__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0], weights_only=False)
 
@@ -26,43 +32,39 @@ class SSSPDataset(InMemoryDataset):
         return ["data.pt"]
 
     @torch.no_grad()
-    def _generate_by_num_nodes(self, num_nodes, k, p=0.3):
-        G = nx.connected_watts_strogatz_graph(num_nodes, k, p)
+    def _generate_by_num_nodes(self, num_nodes):
+        G = nx.extended_barabasi_albert_graph(num_nodes, self.m, self.p, self.q)
         source = random.choice(list(G.nodes()))
         return G, source
-
+    
     @torch.no_grad()
-    def _generate_by_max_hops(self, max_hops, num_nodes, k, p=0.3):
-        assert (
-            max_hops < num_nodes
-        ), f"max_hops {max_hops} should be smaller than num_nodes {num_nodes}"
-        if max_hops > num_nodes / 2:
-            warning(
-                "max_hops larger than num_nodes/2, increasing num_nodes is recommended"
-            )
+    def _generate_by_max_hops(self, max_hops, num_nodes):
+        assert max_hops < num_nodes, f"max_hops {max_hops} should be smaller than num_nodes {num_nodes}"
+        if max_hops > num_nodes/2:
+            warning("max_hops larger than num_nodes/2, increasing num_nodes is recommended")
 
         def get_max_hops(g, s):
             lengths = nx.single_source_shortest_path_length(g, s)
             mh = max(lengths.values())
             return mh
 
-        G = nx.connected_watts_strogatz_graph(num_nodes, k, p)
+        G = nx.extended_barabasi_albert_graph(num_nodes, self.m, self.p, self.q)
         source = random.choice(list(G.nodes()))
         hops = get_max_hops(G, source)
         cnt = 1
         agg_hops = hops
         UPDATE_SOURCE_TIME = 5
         while hops != max_hops:
-            if cnt % 100:
+            if cnt % 100 == 0:
                 warning(f"Tried {cnt} times to generate graph with specified max_hops")
             if cnt % UPDATE_SOURCE_TIME == 0:
-                if agg_hops / UPDATE_SOURCE_TIME < max_hops:
-                    # increase rewiring prob
-                    p -= min(0.05, p / 2)
-                else:
-                    p += min(0.05, (1 - p) / 2)
+                # if agg_hops / UPDATE_SOURCE_TIME < max_hops:
+                #     # increase rewiring prob
+                #     p -= min(0.05, p/2)
+                # else:
+                #     p += min(0.05, (1-p)/2)
                 agg_hops = 0
-                G = nx.connected_watts_strogatz_graph(num_nodes, k, p)
+                G = nx.extended_barabasi_albert_graph(num_nodes, self.m, self.p, self.q)
                 source = random.choice(list(G.nodes()))
             else:
                 source = random.choice(list(G.nodes()))
@@ -77,19 +79,16 @@ class SSSPDataset(InMemoryDataset):
             # --- Generate a random connected graph ---
             num_nodes = random.randint(*self.n_nodes_range)
             # Watts–Strogatz graphs require k to be even.
-            k = min(4, num_nodes - 1)
-            if k % 2 == 1:
-                k += 1
             if self.max_hops is None:
-                G, source = self._generate_by_num_nodes(num_nodes, k, p=0.3)
+                G, source = self._generate_by_num_nodes(num_nodes)
             else:
                 G, source = self._generate_by_max_hops(
-                    self.max_hops, num_nodes, k, p=0.3
+                    self.max_hops, num_nodes
                 )
 
             # --- Assign random weights to edges ---
             for u, v in G.edges():
-                G[u][v]["weight"] = float(random.randint(1, 5))
+                G[u][v]["weight"] = random.random()
 
             # --- Choose a random source node ---
             # source = random.choice(list(G.nodes()))
