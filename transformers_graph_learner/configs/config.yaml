@@ -28,7 +28,7 @@ training:
   save_every: 50
 
 model:
-  d_model: 1024
+  d_model: 512
   nhead: 16
   num_layers: 3
   dropout: 0.1

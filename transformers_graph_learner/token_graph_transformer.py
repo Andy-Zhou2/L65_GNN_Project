@@ -25,6 +25,7 @@ class TokenGT(nn.Module):
         nn.init.zeros_(self.type_embedding.weight[0])
         nn.init.ones_(self.type_embedding.weight[1])
         # Folloing TokenGT, use input dropout
+        self.type_embedding = nn.Embedding(2, self.d_e)
         self.token_proj = nn.Sequential(
             nn.Linear(token_in_dim, d_model),
             nn.Dropout(input_dropout),
