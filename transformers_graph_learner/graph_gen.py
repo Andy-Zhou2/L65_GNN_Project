@@ -61,11 +61,11 @@ class SSSPDataset(torch.utils.data.Dataset):
             if cnt % 100:
                 warning(f"Tried {cnt} times to generate graph with specified max_hops")
             if cnt % UPDATE_SOURCE_TIME == 0:
-                if agg_hops / UPDATE_SOURCE_TIME < max_hops:
-                    # increase rewiring prob 
-                    p -= min(0.05, p/2)
-                else:
-                    p += min(0.05, (1-p)/2)
+                # if agg_hops / UPDATE_SOURCE_TIME < max_hops:
+                #     # increase rewiring prob
+                #     p -= min(0.05, p/2)
+                # else:
+                #     p += min(0.05, (1-p)/2)
                 agg_hops = 0
                 G = nx.connected_watts_strogatz_graph(num_nodes, k, p)
                 source = random.choice(list(G.nodes()))
