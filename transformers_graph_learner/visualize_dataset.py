@@ -44,6 +44,8 @@ def visualize_graph(sample):
     # Draw edges and edge labels
     nx.draw_networkx_edges(G, pos)
     edge_labels = nx.get_edge_attributes(G, "weight")
+    for key in edge_labels:
+        edge_labels[key] = f'{edge_labels[key]:.2f}'
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color="red")
 
     # Draw node labels
@@ -52,7 +54,8 @@ def visualize_graph(sample):
 
     plt.title(
         f"Graph Visualization: Number Nodes: {node_count}, "
-        f"Source Node: {source_node}, Diameter: {nx.diameter(G)}"
+        f"Source Node: {source_node}, Diameter: {nx.diameter(G)}, "
+        f"Eccentricity: {nx.eccentricity(G, v=source_node)}"
     )
     plt.legend(scatterpoints=1)
     plt.axis("off")
@@ -72,8 +75,7 @@ def main(cfg: DictConfig):
     d_p = cfg.dataset.d_p
     d_e = cfg.dataset.d_e
 
-    # Create the dataset.
-    dataset = SSSPDataset(num_graphs=cfg.dataset.num_graphs, d_p=d_p, d_e=d_e)
+    dataset = SSSPDataset(num_graphs=cfg.dataset.num_graphs, d_p=d_p, n_nodes_range=(32, 40), max_hops=4)
     print(f"Total graphs in dataset: {len(dataset)}")
 
     # Split dataset into train and test (e.g., 80/20 split).
