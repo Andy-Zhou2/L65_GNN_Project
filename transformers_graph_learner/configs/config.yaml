@@ -15,8 +15,12 @@ dataset:
   node_id_encode: "orf"
   in_feat_dim: 1
   split: 0.8
-  n_nodes_range: [6, 6]
-  eccentricity: 4
+  n_nodes_range: [10, 10]
+  eccentricity: 3  # null for no restriction
+
+  m: 1
+  p: 0.5
+  q: 0
 
 
 training:

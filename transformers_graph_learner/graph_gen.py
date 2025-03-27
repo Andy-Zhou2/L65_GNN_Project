@@ -13,6 +13,9 @@ class SSSPDataset(torch.utils.data.Dataset):
         n_nodes_range=(20, 20), 
         node_identifier_encoding="one-hot",
         max_hops=None,
+        m=1,
+        p=0.5,
+        q=0
     ):
         """
         Args:
@@ -34,9 +37,13 @@ class SSSPDataset(torch.utils.data.Dataset):
 
         self.data_list = [self.generate_graph(self.node_identifier_encoding) for _ in range(num_graphs)]
 
+        self.m = m
+        self.p = p
+        self.q = q
+
     @torch.no_grad()
     def _generate_by_num_nodes(self, num_nodes, k, p=0.3):
-        G = nx.connected_watts_strogatz_graph(num_nodes, k, p)
+        G = nx.extended_barabasi_albert_graph(num_nodes, self.m, self.p, self.q)
         source = random.choice(list(G.nodes()))
         return G, source
     
@@ -51,7 +58,7 @@ class SSSPDataset(torch.utils.data.Dataset):
             mh = max(lengths.values())
             return mh
 
-        G = nx.connected_watts_strogatz_graph(num_nodes, k, p)
+        G = nx.extended_barabasi_albert_graph(num_nodes, self.m, self.p, self.q)
         source = random.choice(list(G.nodes()))
         hops = get_max_hops(G, source)
         cnt = 1

@@ -75,7 +75,7 @@ def main(cfg: DictConfig):
     d_p = cfg.dataset.d_p
     d_e = cfg.dataset.d_e
 
-    dataset = SSSPDataset(num_graphs=cfg.dataset.num_graphs, d_p=d_p, n_nodes_range=(32, 40), max_hops=4)
+    dataset = SSSPDataset(num_graphs=cfg.dataset.num_graphs, d_p=d_p, n_nodes_range=(10, 10))
     print(f"Total graphs in dataset: {len(dataset)}")
 
     # Split dataset into train and test (e.g., 80/20 split).
