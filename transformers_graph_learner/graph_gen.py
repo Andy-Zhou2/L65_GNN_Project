@@ -90,7 +90,7 @@ class SSSPDataset(torch.utils.data.Dataset):
 
         # --- Assign random weights to edges ---
         for u, v in G.edges():
-            G[u][v]["weight"] = float(random.randint(1, 5))
+            G[u][v]["weight"] = random.random()
 
         # --- Choose a random source node and compute shortest paths ---
         # source = random.choice(list(G.nodes()))
