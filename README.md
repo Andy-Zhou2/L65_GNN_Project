@@ -10,6 +10,7 @@ hydra-joblib doc: https://hydra.cc/docs/plugins/joblib_launcher/
 ### Command list for main experiments
 
 ```
+python -m gnn_single_source_shortest_path.gcn_main -m --config-name config
 python -m transformers_graph_learner.graph_learner_main -m --config-name config seed=1 training.lr=1e-5,1e-4,1e-3 +dataset.n_node_range=[16,16]
 ```
 ```
