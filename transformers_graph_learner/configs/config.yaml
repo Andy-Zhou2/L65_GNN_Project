@@ -6,7 +6,7 @@ seed: 2
 wandb:
   project: "transformer-graph-learner"
   entity: "L65_Project"
-  group: "test_arch_change"
+  group: "test"
 
 dataset:
   num_graphs: 1000
@@ -23,10 +23,15 @@ training:
   epoch: &num_epochs 300
   num_epochs: *num_epochs
   batch_size: 128
-  lr: 2e-4
+  lr: 5e-5
   weight_decay: 0.1
   device: "cuda"  # set to "cpu" if you don't want to use CUDA
   save_every: 50
+  early_stopping:
+    enabled: true
+    patience: 30
+    verbose: false
+    min_delta: 0
 
 model:
   d_model: 512
@@ -36,7 +41,7 @@ model:
   input_dropout: 0.1
 
 scheduler:
-  warmup_steps: 100  # Check the num_epochs and adjust this value accordingly
+  warmup_steps: null  # Check the num_epochs and adjust this value accordingly
 
 
 paths:

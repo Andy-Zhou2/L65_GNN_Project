@@ -16,6 +16,7 @@ from .graph_gen import SSSPDataset, collate_fn
 from .token_graph_transformer import TokenGT
 from .utils import to_device
 from .evaluate_model import evaluate, evaluate_on_graph
+from .early_stopper import EarlyStopping
 
 
 def train_model(cfg: DictConfig):
@@ -99,8 +100,14 @@ def train_model(cfg: DictConfig):
 
     # Define optimizer, scheduler, and loss function.
     optimizer = optim.AdamW(model.parameters(), lr=cfg.training.lr, weight_decay=cfg.training.weight_decay)
+    if cfg.training.early_stopping.enabled:
+        early_stopping = EarlyStopping(patience=cfg.training.early_stopping.patience,
+                                       verbose=cfg.training.early_stopping.verbose,
+                                       delta=cfg.training.early_stopping.min_delta)
 
     def lr_lambda(step, warmup_steps, t_total):
+        if warmup_steps is None:
+            return 1.0
         if step < warmup_steps:
             return float(step) / float(max(1, warmup_steps))
         return max(0.0, float(t_total - step) / float(max(1, t_total - warmup_steps)))
@@ -125,6 +132,13 @@ def train_model(cfg: DictConfig):
         avg_train_loss = total_loss / len(train_loader)
         test_loss = evaluate(test_loader, model, criterion, device)
         scheduler.step()
+
+        if cfg.training.early_stopping.enabled:
+            early_stopping(test_loss)
+
+            if early_stopping.early_stop:
+                print("Early stopping triggered!")
+                break
 
         # Save the model based on the configuration.
         if (epoch + 1) % cfg.training.save_every == 0:
