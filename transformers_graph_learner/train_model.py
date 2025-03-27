@@ -56,6 +56,7 @@ def train_model(cfg: DictConfig):
         d_p=d_p,
         n_nodes_range=cfg.dataset.n_nodes_range,
         node_identifier_encoding=node_id_encode,
+        max_hops=cfg.dataset.eccentricity,
     )
     print(f"Total graphs in dataset: {len(dataset)}")
 

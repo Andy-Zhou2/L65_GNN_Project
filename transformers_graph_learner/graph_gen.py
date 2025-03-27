@@ -58,7 +58,7 @@ class SSSPDataset(torch.utils.data.Dataset):
         agg_hops = hops
         UPDATE_SOURCE_TIME = 5
         while hops != max_hops:
-            if cnt % 100:
+            if cnt % 100 == 0:
                 warning(f"Tried {cnt} times to generate graph with specified max_hops")
             if cnt % UPDATE_SOURCE_TIME == 0:
                 # if agg_hops / UPDATE_SOURCE_TIME < max_hops:
