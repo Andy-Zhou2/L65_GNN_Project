@@ -33,7 +33,7 @@ def unflatten_dot_dict(dot_dict):
 
 @hydra.main(config_path="configs", config_name="config")
 def sweep_train(base_cfg):
-    with wandb.init(group="lr_search_ecc_2_node_6"):
+    with wandb.init(group="layer_search_ecc_2_node_6"):
         # Create sweep config from wandb config (flat dot-dict)
         sweep_cfg = OmegaConf.create(unflatten_dot_dict(wandb.config))
         # Merge sweep overrides with base config
@@ -44,7 +44,7 @@ def sweep_train(base_cfg):
         n_nodes_range = cfg.dataset.n_nodes_range
         seed = cfg.seed
         lr = cfg.training.lr
-        custom_name = f"{num_layers} x {nhead} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) seed {seed} lr {lr}"
+        custom_name = f"{num_layers} x {nhead} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) seed {seed} lr {lr} C"
         wandb.run.name = custom_name
 
         train_model(cfg)
@@ -59,7 +59,8 @@ if __name__ == "__main__":
         cfg[key] = {'value': cfg[key]}
 
     cfg['seed'] = {'values': [1, 2, 3, 4, 5]}
-    cfg['training.lr'] = {'values': [1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2]}
+    # cfg['training.lr'] = {'values': [1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2]}
+    cfg['model.num_layers'] = {'values': [1, 2, 3, 4, 5]}
 
     sweep_config = {
         'method': 'grid',
