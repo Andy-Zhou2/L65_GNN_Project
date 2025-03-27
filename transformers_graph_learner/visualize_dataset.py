@@ -75,7 +75,12 @@ def main(cfg: DictConfig):
     d_p = cfg.dataset.d_p
     d_e = cfg.dataset.d_e
 
-    dataset = SSSPDataset(num_graphs=cfg.dataset.num_graphs, d_p=d_p, n_nodes_range=(10, 10))
+    dataset = SSSPDataset(num_graphs=cfg.dataset.num_graphs,
+                          d_p=d_p, n_nodes_range=cfg.dataset.n_nodes_range,
+                          m=cfg.dataset.m,
+                            p=cfg.dataset.p,
+                            q=cfg.dataset.q,
+                          )
     print(f"Total graphs in dataset: {len(dataset)}")
 
     # Split dataset into train and test (e.g., 80/20 split).
@@ -83,6 +88,29 @@ def main(cfg: DictConfig):
     train_dataset = dataset[:num_train]
     test_dataset = dataset[num_train:]
     print(f"Train graphs: {len(train_dataset)}, Test graphs: {len(test_dataset)}")
+
+    # distribution of eccentricity
+    eccentricities = []
+    for sample in dataset:
+        edge_index = sample["edge_index"]
+        node_count = sample["node_count"]
+        G = nx.Graph()
+        G.add_nodes_from(range(node_count))
+        added_edges = set()
+        for u, v in edge_index.t().numpy():
+            edge = tuple(sorted((u, v)))
+            if edge not in added_edges:
+                G.add_edge(u, v)
+                added_edges.add(edge)
+        eccentricity = nx.eccentricity(G, v=sample["x"].argmax().item())
+        eccentricities.append(eccentricity)
+
+    plt.figure(figsize=(8, 8))
+    plt.hist(eccentricities, bins=20, color="skyblue", edgecolor="black")
+    plt.title("Distribution of Eccentricity")
+    plt.xlabel("Eccentricity")
+    plt.ylabel("Frequency")
+    plt.show()
 
     for _ in range(5):
         sample = random.choice(dataset)

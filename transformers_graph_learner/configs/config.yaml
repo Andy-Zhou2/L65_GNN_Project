@@ -9,22 +9,24 @@ wandb:
   group: "test"
 
 dataset:
-  num_graphs: 1000
-  d_p: 16
+  use_existing: false
+  dataset_path: "dataset"
+  num_graphs: 40_000
+  d_p: 32
   d_e: 1
   node_id_encode: "orf"
   in_feat_dim: 1
   split: 0.8
-  n_nodes_range: [10, 10]
-  eccentricity: 3  # null for no restriction
+  n_nodes_range: [128, 128]
+  eccentricity: 8  # null for no restriction
 
   m: 1
-  p: 0.5
+  p: 0.15
   q: 0
 
 
 training:
-  epoch: &num_epochs 300
+  epoch: &num_epochs 30000
   num_epochs: *num_epochs
   batch_size: 128
   lr: 5e-5
@@ -32,14 +34,14 @@ training:
   device: "cuda"  # set to "cpu" if you don't want to use CUDA
   save_every: 50
   early_stopping:
-    enabled: true
+    enabled: false
     patience: 30
     verbose: false
     min_delta: 0
 
 model:
   d_model: 512
-  nhead: 1
+  nhead: 16
   num_layers: 5
   dropout: 0.1
   input_dropout: 0.1

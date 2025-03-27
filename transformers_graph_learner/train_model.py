@@ -11,6 +11,7 @@ from omegaconf import DictConfig, OmegaConf
 import numpy as np
 import pytorch_warmup as warmup
 import time
+import pickle
 
 from .graph_gen import SSSPDataset, collate_fn
 from .token_graph_transformer import TokenGT
@@ -51,13 +52,28 @@ def train_model(cfg: DictConfig):
     token_in_dim = in_feat_dim + 2 * d_p + d_e
 
     # Create the dataset.
-    dataset = SSSPDataset(
-        num_graphs=cfg.dataset.num_graphs,
-        d_p=d_p,
-        n_nodes_range=cfg.dataset.n_nodes_range,
-        node_identifier_encoding=node_id_encode,
-        max_hops=cfg.dataset.eccentricity,
-    )
+    dataset_name = f'{cfg.dataset.num_graphs}_{cfg.dataset.n_nodes_range[0]}-{cfg.dataset.n_nodes_range[1]}_{cfg.dataset.eccentricity}'
+    if cfg.dataset.use_existing:
+        with open(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl'), 'rb') as f:
+            dataset = pickle.load(f)
+        assert len(dataset) >= cfg.dataset.num_graphs, f'Existing dataset has {len(dataset)} graphs, but requested {cfg.dataset.num_graphs}'
+        dataset = dataset[:cfg.dataset.num_graphs]
+        print(f'Using {len(dataset)} graphs from existing dataset')
+    else:
+        dataset = SSSPDataset(
+            num_graphs=cfg.dataset.num_graphs,
+            d_p=d_p,
+            n_nodes_range=cfg.dataset.n_nodes_range,
+            node_identifier_encoding=node_id_encode,
+            max_hops=cfg.dataset.eccentricity,
+            m=cfg.dataset.m,
+            p=cfg.dataset.p,
+            q=cfg.dataset.q,
+        )
+        os.makedirs(cfg.dataset.dataset_path, exist_ok=True)
+        with open(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl'), 'wb') as f:
+            pickle.dump(dataset, f)
+
     print(f"Total graphs in dataset: {len(dataset)}")
 
     # Split dataset into train and test (e.g., 80/20 split).

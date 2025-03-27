@@ -8,14 +8,15 @@ from torch_geometric.utils import get_laplacian
 
 class SSSPDataset(torch.utils.data.Dataset):
     def __init__(
-        self, num_graphs=100, 
-        d_p=8, 
+        self,
+        m,
+        p,
+        q,
+        num_graphs,
+        d_p=8,
         n_nodes_range=(20, 20), 
         node_identifier_encoding="one-hot",
         max_hops=None,
-        m=1,
-        p=0.5,
-        q=0
     ):
         """
         Args:
@@ -35,20 +36,22 @@ class SSSPDataset(torch.utils.data.Dataset):
         self.node_identifier_encoding = node_identifier_encoding
         self.max_hops = max_hops
 
-        self.data_list = [self.generate_graph(self.node_identifier_encoding) for _ in range(num_graphs)]
-
         self.m = m
         self.p = p
         self.q = q
 
+        self.data_list = [self.generate_graph(self.node_identifier_encoding) for _ in range(num_graphs)]
+
+
+
     @torch.no_grad()
-    def _generate_by_num_nodes(self, num_nodes, k, p=0.3):
+    def _generate_by_num_nodes(self, num_nodes):
         G = nx.extended_barabasi_albert_graph(num_nodes, self.m, self.p, self.q)
         source = random.choice(list(G.nodes()))
         return G, source
     
     @torch.no_grad()
-    def _generate_by_max_hops(self, max_hops, num_nodes, k, p=0.3):
+    def _generate_by_max_hops(self, max_hops, num_nodes):
         assert max_hops < num_nodes, f"max_hops {max_hops} should be smaller than num_nodes {num_nodes}"
         if max_hops > num_nodes/2:
             warning("max_hops larger than num_nodes/2, increasing num_nodes is recommended")
@@ -74,13 +77,14 @@ class SSSPDataset(torch.utils.data.Dataset):
                 # else:
                 #     p += min(0.05, (1-p)/2)
                 agg_hops = 0
-                G = nx.connected_watts_strogatz_graph(num_nodes, k, p)
+                G = nx.extended_barabasi_albert_graph(num_nodes, self.m, self.p, self.q)
                 source = random.choice(list(G.nodes()))
             else:
                 source = random.choice(list(G.nodes()))
             hops = get_max_hops(G, source)
             agg_hops += hops
             cnt += 1
+        # print(f"Generated graph with max_hops {max_hops} in {cnt} iterations")
         return G, source
     
     @torch.no_grad()
@@ -91,9 +95,9 @@ class SSSPDataset(torch.utils.data.Dataset):
         if k % 2 == 1:
             k += 1
         if self.max_hops is None:
-            G, source = self._generate_by_num_nodes(num_nodes, k, p=0.3)
+            G, source = self._generate_by_num_nodes(num_nodes)
         else:
-            G, source = self._generate_by_max_hops(self.max_hops, num_nodes, k, p=0.3)
+            G, source = self._generate_by_max_hops(self.max_hops, num_nodes)
 
         # --- Assign random weights to edges ---
         for u, v in G.edges():

@@ -33,7 +33,7 @@ def unflatten_dot_dict(dot_dict):
 
 @hydra.main(config_path="configs", config_name="config")
 def sweep_train(base_cfg):
-    with wandb.init(group="layer_search_ecc_2_node_6"):
+    with wandb.init(group="layer_search_ecc_3_node_10"):
         # Create sweep config from wandb config (flat dot-dict)
         sweep_cfg = OmegaConf.create(unflatten_dot_dict(wandb.config))
         # Merge sweep overrides with base config
@@ -44,7 +44,8 @@ def sweep_train(base_cfg):
         n_nodes_range = cfg.dataset.n_nodes_range
         seed = cfg.seed
         lr = cfg.training.lr
-        custom_name = f"{num_layers} x {nhead} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) seed {seed} lr {lr} C"
+        eccentricity = cfg.dataset.eccentricity
+        custom_name = f"{num_layers} x {nhead} nodes ({n_nodes_range[0]}-{n_nodes_range[1]})-ecc{eccentricity} seed {seed} lr {lr} C"
         wandb.run.name = custom_name
 
         train_model(cfg)
