@@ -1,25 +1,24 @@
 defaults:
   - override hydra/launcher: joblib
   
-seed: 42
+seed: 1
 
 wandb:
   project: "transformer-graph-learner"
   entity: "L65_Project"
-  group: "debug"
+  group: "gcn-hypsearch_num_graphs"
 
 dataset:
-  num_graphs: 100
+  num_graphs: 40_000
   split: 0.8
   n_nodes_range: [128, 128]
-  eccentricity: 8
+  eccentricity: 8  # null for no restriction
   m: 1
   p: 0.15
   q: 0
 
-
 training:
-  epoch: &num_epochs 100
+  epoch: &num_epochs 30000
   num_epochs: *num_epochs
   batch_size: 128
   lr: 2e-4
