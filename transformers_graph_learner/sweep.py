@@ -1,20 +1,43 @@
 import wandb
 import os
 from hydra import initialize, compose
+from omegaconf import OmegaConf
+import hydra
 
 from .train_model import train_model
 
 
-def sweep_train():
-    with wandb.init(group="lr_search"):
-        with initialize(config_path="configs", version_base=None):
-            cfg = compose(config_name="config")
+def flatten_omegaconf(conf):
+    def _flatten(c, prefix=""):
+        items = {}
+        for k, v in c.items():
+            full_key = f"{prefix}.{k}" if prefix else k
+            if isinstance(v, dict):
+                items.update(_flatten(v, full_key))
+            else:
+                items[full_key] = v
+        return items
 
-        # Extract hyperparameters from wandb config with defaults.
-        print("wandb config:", wandb.config)
-        lr = wandb.config.get("lr")
+    return _flatten(OmegaConf.to_container(conf, resolve=True))
 
-        cfg.training.lr = lr
+
+def unflatten_dot_dict(dot_dict):
+    result = {}
+    for key, value in dot_dict.items():
+        parts = key.split(".")
+        d = result
+        for part in parts[:-1]:
+            d = d.setdefault(part, {})
+        d[parts[-1]] = value
+    return result
+
+@hydra.main(config_path="configs", config_name="config")
+def sweep_train(base_cfg):
+    with wandb.init(group="lr_search_ecc_2_node_6"):
+        # Create sweep config from wandb config (flat dot-dict)
+        sweep_cfg = OmegaConf.create(unflatten_dot_dict(wandb.config))
+        # Merge sweep overrides with base config
+        cfg = OmegaConf.merge(base_cfg, sweep_cfg)
 
         num_layers = cfg.model.num_layers
         nhead = cfg.model.nhead
@@ -28,29 +51,23 @@ def sweep_train():
 
 
 if __name__ == "__main__":
+    with initialize(config_path="configs", version_base=None):
+        cfg = compose(config_name="config")
+
+    cfg = flatten_omegaconf(cfg)
+    for key in cfg:
+        cfg[key] = {'value': cfg[key]}
+
+    cfg['seed'] = {'values': [1, 2, 3, 4, 5]}
+    cfg['training.lr'] = {'values': [1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2]}
+
     sweep_config = {
         'method': 'grid',
         'metric': {
             'name': 'test_loss',  # the metric to optimize
             'goal': 'minimize'
         },
-        'parameters': {
-            "lr": {
-                'values': [1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2],
-            }
-            # 'seed': {
-            #     'values': [42, 43, 44, 45, 46]
-            # },
-            # 'model.nhead': {
-            #     'values': [1]
-            # },
-            # 'model.num_layers': {
-            #     'values': [1, 2, 3, 4, 5]
-            # },
-            # 'dataset.n_nodes_range': {
-            #     'values': [(i, i) for i in [2, 3, 4, 5, 8, 16, 32]]
-            # }
-        }
+        'parameters': cfg
     }
 
     # Create the sweep and get the sweep id.

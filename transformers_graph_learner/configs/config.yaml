@@ -1,25 +1,26 @@
 defaults:
   - override hydra/launcher: joblib
 
-seed: 1
+seed: 2
 
 wandb:
   project: "transformer-graph-learner"
   entity: "L65_Project"
-  group: "max_epoch_search-16_nodes-lap"
+  group: "test_arch_change"
 
 dataset:
   num_graphs: 1000
-  d_p: 64
-  d_e: 1024
-  node_id_encode: "laplacian"
+  d_p: 16
+  d_e: 1
+  node_id_encode: "orf"
   in_feat_dim: 1
   split: 0.8
-  n_nodes_range: [16, 16]
+  n_nodes_range: [6, 6]
+  eccentricity: 4
 
 
 training:
-  epoch: &num_epochs 1000
+  epoch: &num_epochs 300
   num_epochs: *num_epochs
   batch_size: 128
   lr: 2e-4
@@ -29,13 +30,13 @@ training:
 
 model:
   d_model: 512
-  nhead: 16
-  num_layers: 3
+  nhead: 1
+  num_layers: 5
   dropout: 0.1
   input_dropout: 0.1
 
 scheduler:
-  warmup_steps: 300  # Check the num_epochs and adjust this value accordingly
+  warmup_steps: 100  # Check the num_epochs and adjust this value accordingly
 
 
 paths:
