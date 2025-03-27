@@ -62,12 +62,16 @@ class SSSPDataset(torch.utils.data.Dataset):
                     pad = torch.zeros(num_nodes, self.d_p - num_nodes)
                     P = torch.cat([P, pad], dim=-1)
             case "laplacian":
-                A = torch.full((num_nodes, num_nodes), float("inf"))
+                A = torch.zeros(num_nodes, num_nodes)
                 for u, v, w in G.edges.data("weight"):
                     A[u, v] = w
-                in_degree = A.isfinite().sum(dim=1).view(-1)
+                    A[v, u] = w
+                # assert (A == A.t()).all(), "Adjacency matrix not symmetric"
+                in_degree = A.sum(dim=1).view(-1)
                 N = torch.diag(in_degree.clip(1) ** -0.5)
-                L = torch.eye(num_nodes) - N @ A @ N
+                # assert (N == N.t()).all(), "Sqrt degree matrix not symmetric"
+                L = torch.eye(num_nodes) - (N @ A @ N)
+                # assert (L == L.t()).all(), f"Laplacian matrix not symmetric, {L - L.t()}"
                 _, eigvec = torch.linalg.eigh(L)  # shape: [num_nodes, num_nodes], eigvec has columns as eigenvectors
                 # randomly flip eigvec's signs
                 signs = torch.where(torch.randint(0, 2, (eigvec.size(1),)) == 0, -1, 1)  # shape: [num_nodes]
