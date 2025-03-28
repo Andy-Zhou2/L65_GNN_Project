@@ -6,12 +6,13 @@ seed: 2
 wandb:
   project: "transformer-graph-learner"
   entity: "L65_Project"
-  group: "test"
+  group: "tokengt-hypsearch_num_graphs-lr_search"
 
 dataset:
-  use_existing: false
+  use_existing: true
   dataset_path: "dataset"
-  num_graphs: 40_000
+  dataset_name: "40000_128-128_8"
+  num_graphs: 10_000
   d_p: 32
   d_e: 1
   node_id_encode: "orf"
@@ -34,7 +35,7 @@ training:
   device: "cuda"  # set to "cpu" if you don't want to use CUDA
   save_every: 50
   early_stopping:
-    enabled: false
+    enabled: true
     patience: 30
     verbose: false
     min_delta: 0
