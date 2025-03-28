@@ -13,7 +13,8 @@ runs = api.runs(f"{entity}/{project}")
 
 for run in runs:
     # if run.group != "debug": continue
-    if run.state != "finished": continue
+    if run.state == "running": continue
+    if "best_test_loss" in run.summary: continue
     test_loss = run.history(keys=["test_loss"])
     if "test_loss" not in test_loss.columns: continue
     test_loss = test_loss["test_loss"]
