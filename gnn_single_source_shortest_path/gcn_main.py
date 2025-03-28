@@ -137,6 +137,7 @@ def main(cfg: DictConfig):
         ),
     )
 
+    best_test_loss = float("inf")
     training_start_time = time.time()
     # Training loop.
     num_epochs = cfg.training.num_epochs
@@ -172,6 +173,9 @@ def main(cfg: DictConfig):
             },
             step=epoch,
         )
+        if test_loss < best_test_loss:
+            wandb.summary["best_test_loss"] = test_loss
+            best_test_loss = test_loss
         # Early stopping
         if cfg.training.early_stopping.enabled:
             early_stopping(test_loss)

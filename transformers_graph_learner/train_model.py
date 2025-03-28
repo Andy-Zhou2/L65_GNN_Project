@@ -133,6 +133,7 @@ def train_model(cfg: DictConfig):
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda step: lr_lambda(step, cfg.scheduler.warmup_steps, cfg.training.num_epochs))
     criterion = nn.MSELoss()
 
+    best_test_loss = float("inf")
     training_start_time = time.time()
     # Training loop.
     for epoch in range(cfg.training.num_epochs):
@@ -180,6 +181,9 @@ def train_model(cfg: DictConfig):
             },
             step=epoch,
         )
+        if test_loss < best_test_loss:
+            wandb.summary["best_test_loss"] = test_loss
+            best_test_loss = test_loss
 
         # Early stopping
         if cfg.training.early_stopping.enabled:
@@ -190,3 +194,5 @@ def train_model(cfg: DictConfig):
                 break
 
     # evaluate_on_graph(model, test_dataset, device)
+
+    wandb.finish()
