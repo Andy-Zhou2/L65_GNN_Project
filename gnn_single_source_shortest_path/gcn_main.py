@@ -21,6 +21,7 @@ from .graph_gen import SSSPDataset
 from .model import ShortestPathModel
 from transformers_graph_learner.early_stopper import EarlyStopping
 
+# os.environ["WANDB_MODE"] = "disabled"
 
 def train(train_loader, model, optimizer, total_nodes_train, device):
     model.train()
@@ -60,7 +61,8 @@ def main(cfg: DictConfig):
     num_layers = cfg.model.num_layers
     n_nodes_range = cfg.dataset.n_nodes_range
     seed = cfg.seed
-    custom_name = f"GCN {num_layers} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) seed {seed} lr {cfg.training.lr}"
+    custom_name = (f"GCN {num_layers} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) {cfg.dataset.num_graphs} graphs"
+                   f" seed {seed} lr {cfg.training.lr}")
 
     # Initialize Weights & Biases.
     wandb.init(
@@ -80,13 +82,14 @@ def main(cfg: DictConfig):
     # so we initialize the model accordingly.
     dataset = SSSPDataset(
         root="sssp_dataset",
-        num_graphs=100,
+        num_graphs=cfg.dataset.num_graphs,
         n_nodes_range=cfg.dataset.n_nodes_range,
         m=cfg.dataset.m,
         p=cfg.dataset.p,
         q=cfg.dataset.q,
         max_hops=cfg.dataset.get("eccentricity", None),
     )
+    dataset = dataset[:cfg.dataset.num_graphs]  # The dataset may generate more graphs than requested!
     print(f"Dataset size: {len(dataset)}")
     # print(dataset[0])
 
@@ -176,61 +179,61 @@ def main(cfg: DictConfig):
                 print("Early stopping triggered!")
                 break
 
-    # Evaluate a new graph
-    # --- Select a single sample graph from the test dataset ---
-    sample_idx = random.randint(0, len(test_dataset) - 1)
-    sample_data = test_dataset[sample_idx].to(device)
-
-    # --- Get predictions ---
-    model.eval()
-    with torch.no_grad():
-        predicted_distances = model(sample_data).cpu()
-    true_distances = sample_data.y.cpu()
-
-    # Plot the graph
-    # --- Convert the PyG Data object to a NetworkX graph ---
-    edge_index_np = sample_data.edge_index.cpu().numpy()  # shape (2, num_edges)
-    edge_attr_np = sample_data.edge_attr.cpu().numpy()  # shape (num_edges, 1)
-    G_nx = nx.Graph()
-    num_nodes = sample_data.num_nodes
-    G_nx.add_nodes_from(range(num_nodes))
-
-    # --- Add edges (each undirected edge appears only once) and record edge weights ---
-    edge_labels = {}
-    added_edges = set()
-    for i, (u, v) in enumerate(zip(edge_index_np[0], edge_index_np[1])):
-        key = tuple(sorted((u, v)))
-        if key not in added_edges:
-            G_nx.add_edge(u, v)
-            # Since each edge weight is stored as a one-element list, extract its value.
-            edge_labels[key] = f"{edge_attr_np[i][0]:.2f}"
-            added_edges.add(key)
-
-    # --- Create node labels showing both true (T) and predicted (P) distances ---
-    node_labels = {
-        i: f"T: {true_distances[i]:.2f}\nP: {predicted_distances[i]:.2f}"
-        for i in range(num_nodes)
-    }
-
-    # --- Compute positions for visualization ---
-    pos = nx.spring_layout(G_nx)
-
-    # --- Draw the graph ---
-    plt.figure(figsize=(10, 10))
-    nx.draw_networkx_nodes(G_nx, pos, node_color="lightblue", node_size=500)
-    nx.draw_networkx_edges(G_nx, pos, width=1.0, alpha=0.7)
-    nx.draw_networkx_labels(G_nx, pos, labels=node_labels, font_size=10)
-    nx.draw_networkx_edge_labels(
-        G_nx, pos, edge_labels=edge_labels, font_color="red", font_size=8
-    )
-
-    plt.title("Graph Visualization: True vs Predicted Distances with Edge Weights")
-    plt.axis("off")
-    figure_dir = "./figures"
-    if not os.path.exists(figure_dir):
-        os.makedirs(figure_dir)
-    plt.savefig(os.path.join(figure_dir, "gcn_example_pred.png"))
-    plt.show()
+    # # Evaluate a new graph
+    # # --- Select a single sample graph from the test dataset ---
+    # sample_idx = random.randint(0, len(test_dataset) - 1)
+    # sample_data = test_dataset[sample_idx].to(device)
+    #
+    # # --- Get predictions ---
+    # model.eval()
+    # with torch.no_grad():
+    #     predicted_distances = model(sample_data).cpu()
+    # true_distances = sample_data.y.cpu()
+    #
+    # # Plot the graph
+    # # --- Convert the PyG Data object to a NetworkX graph ---
+    # edge_index_np = sample_data.edge_index.cpu().numpy()  # shape (2, num_edges)
+    # edge_attr_np = sample_data.edge_attr.cpu().numpy()  # shape (num_edges, 1)
+    # G_nx = nx.Graph()
+    # num_nodes = sample_data.num_nodes
+    # G_nx.add_nodes_from(range(num_nodes))
+    #
+    # # --- Add edges (each undirected edge appears only once) and record edge weights ---
+    # edge_labels = {}
+    # added_edges = set()
+    # for i, (u, v) in enumerate(zip(edge_index_np[0], edge_index_np[1])):
+    #     key = tuple(sorted((u, v)))
+    #     if key not in added_edges:
+    #         G_nx.add_edge(u, v)
+    #         # Since each edge weight is stored as a one-element list, extract its value.
+    #         edge_labels[key] = f"{edge_attr_np[i][0]:.2f}"
+    #         added_edges.add(key)
+    #
+    # # --- Create node labels showing both true (T) and predicted (P) distances ---
+    # node_labels = {
+    #     i: f"T: {true_distances[i]:.2f}\nP: {predicted_distances[i]:.2f}"
+    #     for i in range(num_nodes)
+    # }
+    #
+    # # --- Compute positions for visualization ---
+    # pos = nx.spring_layout(G_nx)
+    #
+    # # --- Draw the graph ---
+    # plt.figure(figsize=(10, 10))
+    # nx.draw_networkx_nodes(G_nx, pos, node_color="lightblue", node_size=500)
+    # nx.draw_networkx_edges(G_nx, pos, width=1.0, alpha=0.7)
+    # nx.draw_networkx_labels(G_nx, pos, labels=node_labels, font_size=10)
+    # nx.draw_networkx_edge_labels(
+    #     G_nx, pos, edge_labels=edge_labels, font_color="red", font_size=8
+    # )
+    #
+    # plt.title("Graph Visualization: True vs Predicted Distances with Edge Weights")
+    # plt.axis("off")
+    # figure_dir = "./figures"
+    # if not os.path.exists(figure_dir):
+    #     os.makedirs(figure_dir)
+    # plt.savefig(os.path.join(figure_dir, "gcn_example_pred.png"))
+    # plt.show()
 
     # # Plot errors and distributions
     # # --- Compute errors ---

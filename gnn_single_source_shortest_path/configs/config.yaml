@@ -26,7 +26,7 @@ training:
   device: "cuda"  # set to "cpu" if you don't want to use CUDA
   save_every: 50
   early_stopping:
-    enabled: false
+    enabled: true
     patience: 30
     verbose: false
     min_delta: 0
