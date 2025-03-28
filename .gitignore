@@ -6,6 +6,7 @@ outputs/
 multirun/
 sssp_dataset/
 figures/
+dataset/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
