@@ -9,9 +9,9 @@ wandb:
   group: "intermediate-supervision-test"
 
 dataset:
-  use_existing: false
+  use_existing: true
   dataset_path: "dataset"
-  dataset_name: "40000_128-128_8"  # only use this if use_existing is true
+  dataset_name: "10000 graphs (5-5) ecc 3 layer 3"  # only use this if use_existing is true
   num_graphs: 10_000
   d_p: 32
   d_e: 1
@@ -43,10 +43,10 @@ training:
 model:
   d_model: 512
   nhead: 16
-  num_layers: 1
+  num_layers: 2
   dropout: 0.1
   input_dropout: 0.1
-  intermediate_supervision: false
+  intermediate_supervision: true
 
 scheduler:
   warmup_steps: null  # Check the num_epochs and adjust this value accordingly

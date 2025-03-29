@@ -60,7 +60,7 @@ def train_model(cfg: DictConfig):
         dataset = dataset[:cfg.dataset.num_graphs]
         print(f'Using {len(dataset)} graphs from existing dataset')
     else:
-        dataset_name = f'{cfg.dataset.num_graphs}_{cfg.dataset.n_nodes_range[0]}-{cfg.dataset.n_nodes_range[1]}_{cfg.dataset.eccentricity}'
+        dataset_name = f'{cfg.dataset.num_graphs} graphs ({cfg.dataset.n_nodes_range[0]}-{cfg.dataset.n_nodes_range[1]}) ecc {cfg.dataset.eccentricity} layer {cfg.model.num_layers}'
         dataset = SSSPDataset(
             num_graphs=cfg.dataset.num_graphs,
             d_p=d_p,

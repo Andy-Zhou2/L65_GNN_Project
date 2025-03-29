@@ -6,6 +6,10 @@
       <excludeFolder url="file://$MODULE_DIR$/transformers_graph_learner/models" />
       <excludeFolder url="file://$MODULE_DIR$/transformers_graph_learner/outputs" />
       <excludeFolder url="file://$MODULE_DIR$/transformers_graph_learner/wandb" />
+      <excludeFolder url="file://$MODULE_DIR$/dataset" />
+      <excludeFolder url="file://$MODULE_DIR$/models" />
+      <excludeFolder url="file://$MODULE_DIR$/multirun" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs" />
     </content>
     <orderEntry type="jdk" jdkName="gnn_practical" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

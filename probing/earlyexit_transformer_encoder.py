@@ -200,7 +200,7 @@ class EarlyExitTransformerEncoder(torch.nn.Module):
 
         # Forwarding with early exit
         if intermediate_supervision:
-            result = torch.zeros(5, *output.shape, device=output.device)
+            result = torch.zeros(len(self.layers), *output.shape, device=output.device)
         for i, mod in enumerate(self.layers):
             if i >= early_exit_layer_num:
                 break
