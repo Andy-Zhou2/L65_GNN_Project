@@ -9,7 +9,7 @@ class SSSPDataset(InMemoryDataset):
     def __init__(
         self,
         root,
-        num_graphs=100,
+        num_graphs,
         n_nodes_range=(5, 20),
         m=1,
         p=0.15,
@@ -24,7 +24,7 @@ class SSSPDataset(InMemoryDataset):
         self.m = m
         self.p = p
         self.q = q
-        super().__init__(root, transform, pre_transform)
+        super().__init__(root, transform, pre_transform, force_reload=True)
         self.data, self.slices = torch.load(self.processed_paths[0], weights_only=False)
 
     @property
@@ -75,6 +75,7 @@ class SSSPDataset(InMemoryDataset):
 
     def process(self):
         data_list = []
+        print("NUM_GRAPHS:", self.num_graphs)
         for i in range(self.num_graphs):
             # --- Generate a random connected graph ---
             num_nodes = random.randint(*self.n_nodes_range)
