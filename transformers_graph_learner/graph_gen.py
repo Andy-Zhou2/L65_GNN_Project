@@ -4,17 +4,27 @@ import torch
 import networkx as nx
 import random
 from torch_geometric.utils import get_laplacian
+import math
 
 
 class SSSPDataset(torch.utils.data.Dataset):
+    @torch.no_grad()
+    def _generate_by_num_nodes(self, num_nodes):
+        G = nx.extended_barabasi_albert_graph(num_nodes, self.m, self.p, self.q)
+        source = random.choice(list(G.nodes()))
+        return G, source
+
+
+
     def __init__(
         self,
         m,
         p,
         q,
         num_graphs,
+        intermediate_supervision_layers,
         d_p=8,
-        n_nodes_range=(20, 20), 
+        n_nodes_range=(20, 20),
         node_identifier_encoding="one-hot",
         max_hops=None,
     ):
@@ -24,7 +34,7 @@ class SSSPDataset(torch.utils.data.Dataset):
             d_p (int): Dimensionality of the orthonormal node identifiers.
             node_identifier_encoding (str): Encoding method of node identifier P.
               One of ["one-hot", "orf", "laplacian"].
-            max_hops (int): If specified, maximum hops from the source node for graph generation. 
+            max_hops (int): If specified, maximum hops from the source node for graph generation.
         """
         self.num_graphs = num_graphs
         self.d_p = d_p
@@ -40,15 +50,9 @@ class SSSPDataset(torch.utils.data.Dataset):
         self.p = p
         self.q = q
 
+        self.intermediate_supervision_layers = intermediate_supervision_layers
+
         self.data_list = [self.generate_graph(self.node_identifier_encoding) for _ in range(num_graphs)]
-
-
-
-    @torch.no_grad()
-    def _generate_by_num_nodes(self, num_nodes):
-        G = nx.extended_barabasi_albert_graph(num_nodes, self.m, self.p, self.q)
-        source = random.choice(list(G.nodes()))
-        return G, source
     
     @torch.no_grad()
     def _generate_by_max_hops(self, max_hops, num_nodes):
@@ -114,6 +118,8 @@ class SSSPDataset(torch.utils.data.Dataset):
         # --- Create node features (source flag) ---
         x = torch.zeros((num_nodes, self.in_feat_dim))
         x[source] = 1.0
+
+        intermediate_mask = generate_intermediate_supervision_mask(G, source, self.intermediate_supervision_layers)
 
         # --- Generate orthonormal features for nodes ---
         match node_identifier_encoding:
@@ -192,6 +198,7 @@ class SSSPDataset(torch.utils.data.Dataset):
             "x": x,
             "edge_index": edge_index,
             "edge_attr": edge_attr,
+            "intermediate_mask": intermediate_mask,
         }
 
     def __len__(self):
@@ -201,12 +208,56 @@ class SSSPDataset(torch.utils.data.Dataset):
         return self.data_list[idx]
 
 
+def generate_intermediate_supervision_mask(G, source, layers):
+    """
+    Generates an intermediate supervision mask for a given graph G with a specified source node.
+
+    The mask has shape (layers, num_nodes), where each row i is defined as:
+      mask[i][j] = 1 if node j is within 2^i hops from the source node, and 0 otherwise.
+    If layers > (computed steps based on maximum hop), the extra rows simply repeat the last computed row.
+
+    Parameters:
+        G (networkx.Graph): The input graph.
+        source (int): The source node from which to compute hop distances.
+        layers (int): The desired number of layers (rows) in the supervision mask.
+
+    Returns:
+        np.ndarray: A binary mask with shape (layers, num_nodes).
+    """
+    # Compute unweighted hop distances from the source node.
+    hop_dict = nx.single_source_shortest_path_length(G, source)
+    num_nodes = G.number_of_nodes()
+    hops = [hop_dict.get(node, float('inf')) for node in range(num_nodes)]
+
+    # Determine the number of steps needed based on maximum hop distance.
+    max_hop = max(hops)
+    computed_steps = math.ceil(math.log2(max_hop)) + 1 if max_hop > 0 else 1
+
+    # Initialize the mask array.
+    mask = torch.zeros((layers, num_nodes), dtype=torch.float32)
+
+    # Fill the mask for each layer up to the minimum of layers and computed_steps.
+    for i in range(min(layers, computed_steps)):
+        threshold = 2 ** i
+        for j in range(num_nodes):
+            if hops[j] <= threshold:
+                mask[i, j] = 1.0
+
+    # For additional layers beyond computed_steps, repeat the last computed row.
+    if layers > computed_steps:
+        for i in range(computed_steps, layers):
+            mask[i] = mask[computed_steps - 1]
+
+    return mask
+
+
 def collate_fn(batch):
     # batch is a list of dictionaries from __getitem__
     # Extract tokens and other items you need
     tokens_list = [d["tokens"] for d in batch]
     y_list = [d["y"] for d in batch]
     node_counts = [d["node_count"] for d in batch]
+    intermediate_masks_list = [d["intermediate_mask"] for d in batch]
 
     # Determine the maximum token sequence length in this batch
     max_len = max(token.shape[0] for token in tokens_list)
@@ -238,9 +289,63 @@ def collate_fn(batch):
     # You can also collate node_counts, edge information, etc.
     batch_node_counts = torch.tensor(node_counts)
 
+    # --- Process intermediate masks ---
+    # Each intermediate mask is a tensor of shape (layers, num_nodes). Pad each along the node dimension.
+    max_nodes = batch_y.shape[1]
+    padded_intermediate_masks = []
+    for im in intermediate_masks_list:
+        # Ensure im is a tensor; if not, convert it.
+        if not torch.is_tensor(im):
+            im = torch.tensor(im, dtype=torch.float)
+        num_nodes = im.shape[1]
+        pad_len = max_nodes - num_nodes
+        if pad_len > 0:
+            pad = torch.zeros(im.shape[0], pad_len)
+            im_padded = torch.cat([im, pad], dim=1)
+        else:
+            im_padded = im
+        padded_intermediate_masks.append(im_padded)
+    batch_intermediate_masks = torch.stack(padded_intermediate_masks, dim=0)  # shape: [batch, layers, max_nodes]
+
+    batch_intermediate_ys = batch_intermediate_masks * batch_y.unsqueeze(1)
+    batch_intermediate_ys = batch_intermediate_ys.transpose(0, 1)  # shape: [layers, batch, max_nodes]
+
     return {
         "tokens": batch_tokens,
         "attn_mask": batch_masks,
         "y": batch_y,
+        "intermediate_ys": batch_intermediate_ys,
         "node_count": batch_node_counts,
     }
+
+# Example usage:
+if __name__ == "__main__":
+    import random
+    random.seed(42)
+    np.random.seed(42)
+    torch.manual_seed(42)
+
+    dataset = SSSPDataset(
+        m=1,
+        p=0.15,
+        q=0,
+        num_graphs=10,
+        intermediate_supervision_layers=5,
+        n_nodes_range=(10, 10)
+    )
+
+    for i in range(len(dataset)):
+        data = dataset[i]
+        print(f"Graph {i}:")
+        print(f"  Number of nodes: {data['node_count']}")
+        print(f"  Tokens shape: {data['tokens'].shape}")
+        print(f"  Edge index shape: {data['edge_index'].shape}")
+        print(f"  Edge attr shape: {data['edge_attr'].shape}")
+        print(f"  y shape: {data['y'].shape}")
+        print(f"  Intermediate mask shape: {data['intermediate_mask'].shape}")
+
+    from transformers_graph_learner.visualize_dataset import visualize_graph
+    visualize_graph(dataset[0])
+    print(dataset[0]["intermediate_mask"])
+    print(dataset[0]["y"])
+    print(dataset[0]["intermediate_mask"] * dataset[0]["y"].unsqueeze(0))

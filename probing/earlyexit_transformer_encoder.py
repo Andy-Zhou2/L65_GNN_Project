@@ -68,6 +68,7 @@ class EarlyExitTransformerEncoder(torch.nn.Module):
     def forward(
         self,
         src: Tensor,
+        intermediate_supervision: Optional[bool] = False,
         mask: Optional[Tensor] = None,
         src_key_padding_mask: Optional[Tensor] = None,
         is_causal: Optional[bool] = None,
@@ -198,6 +199,8 @@ class EarlyExitTransformerEncoder(torch.nn.Module):
         is_causal = _detect_is_causal_mask(mask, is_causal, seq_len)
 
         # Forwarding with early exit
+        if intermediate_supervision:
+            result = torch.zeros(5, *output.shape, device=output.device)
         for i, mod in enumerate(self.layers):
             if i >= early_exit_layer_num:
                 break
@@ -207,6 +210,8 @@ class EarlyExitTransformerEncoder(torch.nn.Module):
                 is_causal=is_causal,
                 src_key_padding_mask=src_key_padding_mask_for_layers,
             )
+            if intermediate_supervision:
+                result[i] = output
 
         if convert_to_nested:
             output = output.to_padded_tensor(0.0, src.size())
@@ -214,4 +219,7 @@ class EarlyExitTransformerEncoder(torch.nn.Module):
         if self.norm is not None:
             output = self.norm(output)
 
-        return output
+        if intermediate_supervision:
+            return result
+        else:
+            return output

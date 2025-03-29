@@ -5,7 +5,8 @@ from probing.earlyexit_transformer_encoder import EarlyExitTransformerEncoder
 
 
 class TokenGT(nn.Module):
-    def __init__(self, token_in_dim, d_model, nhead, num_layers, d_e=None, activation="gelu", dropout=0.1, input_dropout=0.1):
+    def __init__(self, token_in_dim, d_model, nhead, num_layers,
+                 d_e=None, activation="gelu", dropout=0.1, input_dropout=0.1):
         """
         Args:
             token_in_dim (int): Dimensionality of the input tokens
@@ -41,7 +42,7 @@ class TokenGT(nn.Module):
             nn.Linear(d_model, 1),
         )
 
-    def forward(self, data):
+    def forward(self, data, intermediate_supervision=False):
         """
         Args:
             data (dict): Contains:
@@ -71,20 +72,36 @@ class TokenGT(nn.Module):
         src_key_padding_mask = attn_mask == 0  # [B, num_tokens]
 
         # Pass tokens through the transformer.
-        tokens = self.transformer(tokens, src_key_padding_mask=src_key_padding_mask)
+        tokens = self.transformer(tokens,
+                                  src_key_padding_mask=src_key_padding_mask,
+                                  intermediate_supervision=intermediate_supervision)
         # tokens: [B, num_tokens, d_model]
 
         # Apply the prediction head.
         pred_all = self.pred_head(tokens).squeeze(-1)  # [B, num_tokens]
 
-        # Create a mask based on node_count to zero out predictions for non-node (padded) positions.
-        # For each sample i, we want to keep only the first node_count[i] tokens.
-        B, T = pred_all.size()
-        device = pred_all.device
-        node_mask = (
-            torch.arange(T, device=device).unsqueeze(0) < node_count.unsqueeze(1)
-        ).float()  # [B, T]
+        if pred_all.dim() == 3:
+            # Create a mask based on node_count to zero out predictions for non-node (padded) positions.
+            # For each sample i, we want to keep only the first node_count[i] tokens.
+            L, B, T = pred_all.size()
+            device = pred_all.device
+            node_mask = (
+                torch.arange(T, device=device).unsqueeze(0) < node_count.unsqueeze(1)
+            ).float()  # [B, T]
 
-        # Multiply elementwise so that positions beyond the actual nodes are zeroed out.
-        pred = pred_all * node_mask  # [B, num_tokens]
-        return pred[:, : node_count.max().item()]
+            # Multiply elementwise so that positions beyond the actual nodes are zeroed out.
+            pred = pred_all * node_mask.unsqueeze(0)  # [B, num_tokens]
+            return pred[:, :, : node_count.max().item()]
+        else:
+            assert pred_all.dim() == 2
+
+            B, T = pred_all.size()
+            device = pred_all.device
+            node_mask = (
+                    torch.arange(T, device=device).unsqueeze(0) < node_count.unsqueeze(1)
+            ).float()  # [B, T]
+
+            # Multiply elementwise so that positions beyond the actual nodes are zeroed out.
+            pred = pred_all * node_mask  # [B, num_tokens]
+            return pred[:, : node_count.max().item()]
+

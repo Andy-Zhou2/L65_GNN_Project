@@ -70,6 +70,7 @@ def train_model(cfg: DictConfig):
             m=cfg.dataset.m,
             p=cfg.dataset.p,
             q=cfg.dataset.q,
+            intermediate_supervision_layers=cfg.model.num_layers,
         )
         os.makedirs(cfg.dataset.dataset_path, exist_ok=True)
         with open(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl'), 'wb') as f:
@@ -88,14 +89,14 @@ def train_model(cfg: DictConfig):
         train_dataset,
         batch_size=cfg.training.batch_size,
         shuffle=True,
-        pin_memory=True,
+        pin_memory=False,
         collate_fn=collate_fn,
     )
     test_loader = DataLoader(
         test_dataset,
         batch_size=cfg.training.batch_size,
         shuffle=False,
-        pin_memory=True,
+        pin_memory=False,
         collate_fn=collate_fn,
     )
 
@@ -142,8 +143,11 @@ def train_model(cfg: DictConfig):
         for data in train_loader:
             data = to_device(data, device)
             optimizer.zero_grad()
-            pred = model(data)
-            loss = criterion(pred, data["y"])
+            pred = model(data, cfg.model.intermediate_supervision)
+            if cfg.model.intermediate_supervision:
+                loss = criterion(pred, data["intermediate_ys"])
+            else:
+                loss = criterion(pred, data["y"])
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
@@ -167,10 +171,10 @@ def train_model(cfg: DictConfig):
 
         current_lr = scheduler.get_last_lr()[0]
         current_lr_log = np.log10(current_lr)
-        if (epoch + 1) % 10 == 0:
-            print(
-                f"Epoch {epoch + 1}/{cfg.training.num_epochs}, Train Loss: {avg_train_loss:.4f}, Test Loss: {test_loss:.4f}, Learning Rate: 1e{current_lr_log}"
-            )
+        # if (epoch + 1) % 10 == 0:
+        print(
+            f"Epoch {epoch + 1}/{cfg.training.num_epochs}, Train Loss: {avg_train_loss:.4f}, Test Loss: {test_loss:.4f}, Learning Rate: 1e{current_lr_log}"
+        )
         wandb.log(
             {
                 "train_loss": avg_train_loss,

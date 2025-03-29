@@ -6,20 +6,20 @@ seed: 2
 wandb:
   project: "transformer-graph-learner"
   entity: "L65_Project"
-  group: "tokengt-hypsearch_num_graphs-lr_search"
+  group: "intermediate-supervision-test"
 
 dataset:
-  use_existing: true
+  use_existing: false
   dataset_path: "dataset"
-  dataset_name: "40000_128-128_8"
+  dataset_name: "40000_128-128_8"  # only use this if use_existing is true
   num_graphs: 10_000
   d_p: 32
   d_e: 1
   node_id_encode: "orf"
   in_feat_dim: 1
-  split: 0.8
-  n_nodes_range: [128, 128]
-  eccentricity: 8  # null for no restriction
+  split: 0.5
+  n_nodes_range: [5, 5]
+  eccentricity: 3  # null for no restriction
 
   m: 1
   p: 0.15
@@ -29,13 +29,13 @@ dataset:
 training:
   epoch: &num_epochs 30000
   num_epochs: *num_epochs
-  batch_size: 128
+  batch_size: 64
   lr: 5e-5
   weight_decay: 0.1
   device: "cuda"  # set to "cpu" if you don't want to use CUDA
   save_every: 50
   early_stopping:
-    enabled: true
+    enabled: false
     patience: 30
     verbose: false
     min_delta: 0
@@ -43,9 +43,10 @@ training:
 model:
   d_model: 512
   nhead: 16
-  num_layers: 5
+  num_layers: 1
   dropout: 0.1
   input_dropout: 0.1
+  intermediate_supervision: false
 
 scheduler:
   warmup_steps: null  # Check the num_epochs and adjust this value accordingly
