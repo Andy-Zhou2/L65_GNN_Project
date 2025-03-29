@@ -169,7 +169,7 @@ def train_model(cfg: DictConfig):
         current_lr_log = np.log10(current_lr)
         if (epoch + 1) % 10 == 0:
             print(
-                f"Epoch {epoch + 1}/{cfg.training.num_epochs}, Train Loss: {avg_train_loss:.4f}, Test Loss: {test_loss:.4f}, Learning Rate: 1e{current_lr_log}"
+                f"Epoch {epoch + 1}/{cfg.training.num_epochs}, Train Loss: {avg_train_loss:.4f}, Test Loss: {test_loss:.4f}, Learning Rate: {current_lr}"
             )
         wandb.log(
             {

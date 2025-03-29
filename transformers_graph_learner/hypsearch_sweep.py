@@ -27,7 +27,9 @@ def main(cfg: DictConfig):
         shutil.copy(file_path, output_dir)
     shutil.copy(f"transformers_graph_learner/configs/{HydraConfig.get().job.config_name}.yaml", output_dir)
 
-    for lr in [1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3]:
+    print("Layers:", cfg.model.num_layers)
+    print("Seed:", cfg.seed)
+    for lr in [1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4]:
         cfg.training.lr = lr
         print(f"<<< Training with LR {lr} (seed {cfg.seed}) >>>")
         train_model(cfg)
