@@ -41,7 +41,7 @@ def plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_
         for i in range(num_nodes)
     }
 
-    pos = nx.spring_layout(G_nx)
+    pos = nx.spring_layout(G_nx, seed=42)
 
     plt.figure(figsize=(10, 10))
     nx.draw_networkx_nodes(G_nx, pos, node_color="lightblue", node_size=500)
