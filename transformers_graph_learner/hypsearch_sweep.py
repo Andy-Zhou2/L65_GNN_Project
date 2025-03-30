@@ -27,11 +27,21 @@ def main(cfg: DictConfig):
         shutil.copy(file_path, output_dir)
     shutil.copy(f"transformers_graph_learner/configs/{HydraConfig.get().job.config_name}.yaml", output_dir)
 
-    for lr in [1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3]:
-        cfg.training.lr = lr
-        print(f"<<< Training with LR {lr} (seed {cfg.seed}) >>>")
-        train_model(cfg)
-        print(f"<<< Done training with LR {lr} graphs (seed {cfg.seed}) >>>")
+    for seed in [1, 2, 3, 4]:
+        for ecc in range(2, 5):
+            for num_layers in range(1, 4):
+                for num_heads in [1, 2, 4, 8, 16]:
+                    for supervision in [True, False]:
+                        if supervision and ecc > num_layers:  # Supervision doesn't make sense in this case
+                            continue
+                        cfg.seed = seed
+                        cfg.model.num_layers = num_layers
+                        cfg.model.nhead = num_heads
+                        cfg.dataset.eccentricity = ecc
+                        cfg.model.intermediate_supervision = supervision
+                        print(f"<<< Training with {num_layers} layers, {num_heads} heads, ecc {ecc}, supervision {supervision} (seed {cfg.seed}) >>>")
+                        train_model(cfg)
+                        print(f"<<< Done training with {num_layers} layers, {num_heads} heads, ecc {ecc}, supervision {supervision} (seed {cfg.seed}) >>>")
 
 
 if __name__ == "__main__":

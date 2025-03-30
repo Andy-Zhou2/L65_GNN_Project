@@ -80,6 +80,7 @@ def main(cfg: DictConfig):
                           m=cfg.dataset.m,
                             p=cfg.dataset.p,
                             q=cfg.dataset.q,
+                          intermediate_supervision_layers=cfg.model.num_layers,
                           )
     print(f"Total graphs in dataset: {len(dataset)}")
 

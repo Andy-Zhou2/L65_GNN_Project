@@ -33,16 +33,14 @@ def main(cfg: DictConfig):
     token_in_dim = in_feat_dim + 2 * d_p + d_e
 
     # Create the dataset.
-    if cfg.dataset.use_existing:
-        dataset_name = cfg.dataset.dataset_name
+    dataset_name = f'{cfg.dataset.num_graphs} graphs ({cfg.dataset.n_nodes_range[0]}-{cfg.dataset.n_nodes_range[1]}) ecc {cfg.dataset.eccentricity} layer {cfg.model.num_layers}'
+    if cfg.dataset.use_existing and os.path.exists(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl')):
         with open(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl'), 'rb') as f:
             dataset = pickle.load(f)
         assert len(dataset) >= cfg.dataset.num_graphs, f'Existing dataset has {len(dataset)} graphs, but requested {cfg.dataset.num_graphs}'
         dataset = dataset[:cfg.dataset.num_graphs]
         print(f'Using {len(dataset)} graphs from existing dataset')
     else:
-        dataset_name = f'{cfg.dataset.num_graphs} graphs ({cfg.dataset.n_nodes_range[0]}-{cfg.dataset.n_nodes_range[1]}) ecc {cfg.dataset.eccentricity} layer {cfg.model.num_layers}'
-
         dataset = SSSPDataset(
             num_graphs=cfg.dataset.num_graphs,
             d_p=d_p,
@@ -52,7 +50,7 @@ def main(cfg: DictConfig):
             m=cfg.dataset.m,
             p=cfg.dataset.p,
             q=cfg.dataset.q,
-            intermediate_supervision_layers=cfg.dataset.eccentricity,
+            intermediate_supervision_layers=cfg.model.num_layers,
         )
         os.makedirs(cfg.dataset.dataset_path, exist_ok=True)
         with open(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl'), 'wb') as f:
@@ -100,9 +98,9 @@ def main(cfg: DictConfig):
         input_dropout=cfg.model.input_dropout,
     ).to(device)
 
-    model.load_state_dict(torch.load("models/2025-03-29/12-11-05/model_100.pth", map_location=device))
+    model.load_state_dict(torch.load("models/2025-03-29/20-50-57/model_1400.pth", map_location=device))
 
-    sample_data = train_dataset[0]
+    sample_data = test_dataset[0]
     evaluate_on_graph(model, sample_data, device, cfg.model.intermediate_supervision)
 
 

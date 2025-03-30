@@ -28,7 +28,9 @@ def train_model(cfg: DictConfig):
     nhead = cfg.model.nhead
     n_nodes_range = cfg.dataset.n_nodes_range
     seed = cfg.seed
-    custom_name = f"{num_layers} x {nhead} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) seed {seed} lr {cfg.training.lr}"
+    eccentricity = cfg.dataset.eccentricity
+    intermediate_supervision = cfg.model.intermediate_supervision
+    custom_name = f"{num_layers} x {nhead} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) ecc {eccentricity} seed {seed} lr {cfg.training.lr} int_sup {intermediate_supervision}"
 
     # Initialize Weights & Biases.
     wandb.init(
@@ -52,15 +54,14 @@ def train_model(cfg: DictConfig):
     token_in_dim = in_feat_dim + 2 * d_p + d_e
 
     # Create the dataset.
-    if cfg.dataset.use_existing:
-        dataset_name = cfg.dataset.dataset_name
+    dataset_name = f'{cfg.dataset.num_graphs} graphs ({cfg.dataset.n_nodes_range[0]}-{cfg.dataset.n_nodes_range[1]}) ecc {cfg.dataset.eccentricity} layer {cfg.model.num_layers}'
+    if cfg.dataset.use_existing and os.path.exists(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl')):
         with open(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl'), 'rb') as f:
             dataset = pickle.load(f)
         assert len(dataset) >= cfg.dataset.num_graphs, f'Existing dataset has {len(dataset)} graphs, but requested {cfg.dataset.num_graphs}'
         dataset = dataset[:cfg.dataset.num_graphs]
         print(f'Using {len(dataset)} graphs from existing dataset')
     else:
-        dataset_name = f'{cfg.dataset.num_graphs} graphs ({cfg.dataset.n_nodes_range[0]}-{cfg.dataset.n_nodes_range[1]}) ecc {cfg.dataset.eccentricity} layer {cfg.model.num_layers}'
         dataset = SSSPDataset(
             num_graphs=cfg.dataset.num_graphs,
             d_p=d_p,

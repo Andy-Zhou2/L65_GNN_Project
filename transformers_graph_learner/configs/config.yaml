@@ -11,14 +11,14 @@ wandb:
 dataset:
   use_existing: true
   dataset_path: "dataset"
-  dataset_name: "10000 graphs (5-5) ecc 3 layer 3"  # only use this if use_existing is true
+  #dataset_name: "10000 graphs (5-5) ecc 3 layer 3"  # only use this if use_existing is true
   num_graphs: 10_000
   d_p: 32
   d_e: 1
   node_id_encode: "orf"
   in_feat_dim: 1
   split: 0.5
-  n_nodes_range: [5, 5]
+  n_nodes_range: [8, 8]
   eccentricity: 3  # null for no restriction
 
   m: 1
@@ -27,7 +27,7 @@ dataset:
 
 
 training:
-  epoch: &num_epochs 30000
+  epoch: &num_epochs 1000
   num_epochs: *num_epochs
   batch_size: 64
   lr: 5e-5
@@ -35,18 +35,18 @@ training:
   device: "cuda"  # set to "cpu" if you don't want to use CUDA
   save_every: 50
   early_stopping:
-    enabled: false
-    patience: 30
+    enabled: true
+    patience: 100
     verbose: false
     min_delta: 0
 
 model:
   d_model: 512
-  nhead: 16
+  nhead: 1
   num_layers: 2
   dropout: 0.1
   input_dropout: 0.1
-  intermediate_supervision: true
+  intermediate_supervision: false
 
 scheduler:
   warmup_steps: null  # Check the num_epochs and adjust this value accordingly
