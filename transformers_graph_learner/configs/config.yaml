@@ -6,7 +6,7 @@ seed: 2
 wandb:
   project: "transformer-graph-learner"
   entity: "L65_Project"
-  group: "intermediate-supervision-test"
+  group: "intermediate-supervision-16-nodes"
 
 dataset:
   use_existing: true
@@ -18,7 +18,7 @@ dataset:
   node_id_encode: "orf"
   in_feat_dim: 1
   split: 0.5
-  n_nodes_range: [8, 8]
+  n_nodes_range: [16, 16]
   eccentricity: 3  # null for no restriction
 
   m: 1

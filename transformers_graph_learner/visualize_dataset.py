@@ -75,6 +75,8 @@ def main(cfg: DictConfig):
     d_p = cfg.dataset.d_p
     d_e = cfg.dataset.d_e
 
+    print(f'node range: {cfg.dataset.n_nodes_range}')
+
     dataset = SSSPDataset(num_graphs=cfg.dataset.num_graphs,
                           d_p=d_p, n_nodes_range=cfg.dataset.n_nodes_range,
                           m=cfg.dataset.m,
