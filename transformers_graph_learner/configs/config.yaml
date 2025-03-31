@@ -6,7 +6,7 @@ seed: 2
 wandb:
   project: "transformer-graph-learner"
   entity: "L65_Project"
-  group: "intermediate-supervision-test"
+  group: "intermediate-supervision-ood"
 
 dataset:
   use_existing: true
@@ -47,7 +47,7 @@ model:
   num_layers: 4
   dropout: 0.1
   input_dropout: 0.1
-  intermediate_supervision: false
+  intermediate_supervision: true
 
 scheduler:
   warmup_steps: null  # Check the num_epochs and adjust this value accordingly

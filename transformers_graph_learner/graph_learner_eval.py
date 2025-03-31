@@ -98,10 +98,17 @@ def main(cfg: DictConfig):
         input_dropout=cfg.model.input_dropout,
     ).to(device)
 
-    model.load_state_dict(torch.load("models/2025-03-29/20-50-57/model_1400.pth", map_location=device))
+    model.load_state_dict(torch.load("models/interm_sup_ood-no_sup-seed_4/model_500.pth", map_location=device))
 
     sample_data = test_dataset[0]
-    evaluate_on_graph(model, sample_data, device, cfg.model.intermediate_supervision)
+    evaluate_on_graph(
+        model, 
+        sample_data, 
+        device, 
+        cfg.model.intermediate_supervision, 
+        graph_config=(cfg.dataset.n_nodes_range[0], cfg.dataset.n_nodes_range[1], cfg.dataset.eccentricity),
+        single_plot=True,
+    )
 
 
 if __name__ == "__main__":

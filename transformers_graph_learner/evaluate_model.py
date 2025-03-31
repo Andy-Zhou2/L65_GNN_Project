@@ -39,7 +39,7 @@ def evaluate_ood(loaders, model, criterion, device):
             results.append(total_loss / total_nodes)
     return results
 
-def plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_distances, num_nodes, source_node, layer_num=None):
+def plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_distances, num_nodes, source_node, layer_num=None, ax=None):
     G_nx = nx.Graph()
     G_nx.add_nodes_from(range(num_nodes))
 
@@ -61,10 +61,11 @@ def plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_
 
     pos = nx.spring_layout(G_nx, seed=42)
 
-    plt.figure(figsize=(10, 10))
-    nx.draw_networkx_nodes(G_nx, pos, node_color="lightblue", node_size=500)
-    nx.draw_networkx_edges(G_nx, pos, width=1.0, alpha=0.7)
-    nx.draw_networkx_labels(G_nx, pos, labels=node_labels, font_size=10)
+    if ax is None:
+        plt.figure(figsize=(10, 10))
+    nx.draw_networkx_nodes(G_nx, pos, node_color="lightblue", node_size=500, ax=ax)
+    nx.draw_networkx_edges(G_nx, pos, width=1.0, alpha=0.7, ax=ax)
+    nx.draw_networkx_labels(G_nx, pos, labels=node_labels, font_size=10, ax=ax)
 
     nx.draw_networkx_nodes(
         G_nx,
@@ -73,20 +74,26 @@ def plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_
         node_color="orange",
         node_size=600,
         label="Source",
+        ax=ax,
     )
 
     nx.draw_networkx_edge_labels(
-        G_nx, pos, edge_labels=edge_labels, font_color="red", font_size=8
+        G_nx, pos, edge_labels=edge_labels, font_color="red", font_size=8, ax=ax
     )
 
-    if layer_num is not None:
-        plt.title(f"Graph Visualization: Layer {layer_num} - True vs Predicted Distances")
+    if ax is None:
+        if layer_num is not None:
+            plt.title(f"Graph Visualization: Layer {layer_num} - True vs Predicted Distances")
+        else:
+            plt.title("Graph Visualization: True vs Predicted Distances")
+        plt.axis("off")
+        plt.tight_layout()
+        # plt.savefig(f"./figures/{}")
+        plt.show()
     else:
-        plt.title("Graph Visualization: True vs Predicted Distances")
-    plt.axis("off")
-    plt.show()
+        ax.set_axis_off()
 
-def evaluate_on_graph(model, sample_data, device, intermediate_supervision=False):
+def evaluate_on_graph(model, sample_data, device, intermediate_supervision=False, graph_config=None, single_plot=False):
     collate_data = collate_fn([sample_data])
     collate_data = to_device(collate_data, device)
 
@@ -100,16 +107,37 @@ def evaluate_on_graph(model, sample_data, device, intermediate_supervision=False
     num_nodes = sample_data["node_count"]
     source_node = sample_data["x"].argmax().item()
 
-    if intermediate_supervision:
-       for i in range(len(predicted_distances)):
-            print('predicted_distances', predicted_distances.shape)
-            predicted_distance_layer = predicted_distances[i][0]
+    if single_plot:
+        if intermediate_supervision:
+            fig, axes = plt.subplots(1, len(predicted_distances), figsize=(15,6))
+            for i in range(len(predicted_distances)):
+                print('predicted_distances', predicted_distances.shape)
+                ax = axes[i]
+                predicted_distance_layer = predicted_distances[i][0]
+                true_distances = collate_data["intermediate_ys"].cpu()[-1][0]
+                plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_distance_layer, num_nodes, source_node, layer_num=i, ax=ax)
+        else:
+            fig, ax = plt.subplots(1, 1)
             true_distances = collate_data["intermediate_ys"].cpu()[-1][0]
-            plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_distance_layer, num_nodes, source_node, layer_num=i)
+            predicted_distances = predicted_distances[-1]
+            plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_distances, num_nodes, source_node, ax=ax)
+        fig.tight_layout()
+        if graph_config[0] == graph_config[1]:
+            fig.suptitle(f"Graph Visualization: {graph_config[0]} nodes, ecc {graph_config[2]} - True vs Predicted Distances")
+        else:
+            fig.suptitle(f"Graph Visualization: {graph_config[0]}-{graph_config[1]} nodes, ecc {graph_config[2]} - True vs Predicted Distances")
+        plt.show()
     else:
-        true_distances = collate_data["intermediate_ys"].cpu()[-1][0]
-        predicted_distances = predicted_distances[-1]
-        plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_distances, num_nodes, source_node)
+        if intermediate_supervision:
+            for i in range(len(predicted_distances)):
+                print('predicted_distances', predicted_distances.shape)
+                predicted_distance_layer = predicted_distances[i][0]
+                true_distances = collate_data["intermediate_ys"].cpu()[-1][0]
+                plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_distance_layer, num_nodes, source_node, layer_num=i)
+        else:
+            true_distances = collate_data["intermediate_ys"].cpu()[-1][0]
+            predicted_distances = predicted_distances[-1]
+            plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_distances, num_nodes, source_node)
 
     # # Plot errors and distributions.
     # errors = predicted_distances - true_distances
