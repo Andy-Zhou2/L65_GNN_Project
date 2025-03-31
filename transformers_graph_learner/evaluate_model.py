@@ -36,7 +36,7 @@ def evaluate_ood(loaders, model, criterion, device):
                 loss = criterion(pred, data["y"])
                 total_loss += loss.item() * data["node_count"].sum()
                 total_nodes += data["node_count"].sum().item()
-                results.append(total_loss / total_nodes)
+            results.append(total_loss / total_nodes)
     return results
 
 def plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_distances, num_nodes, source_node, layer_num=None):

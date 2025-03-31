@@ -244,7 +244,7 @@ def train_model(cfg: DictConfig):
             )
             if ood_loss < best_ood_loss:
                 wandb.summary[f"best_{ood_config}_loss"] = ood_loss
-                best_ood_loss[i] = ood_loss
+                best_ood_losses[i] = ood_loss
         
 
         # Early stopping

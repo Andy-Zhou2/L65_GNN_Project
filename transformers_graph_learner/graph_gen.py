@@ -57,8 +57,8 @@ class SSSPDataset(torch.utils.data.Dataset):
     @torch.no_grad()
     def _generate_by_max_hops(self, max_hops, num_nodes):
         assert max_hops < num_nodes, f"max_hops {max_hops} should be smaller than num_nodes {num_nodes}"
-        if max_hops > num_nodes/2:
-            warning("max_hops larger than num_nodes/2, increasing num_nodes is recommended")
+        # if max_hops > num_nodes/2:
+        #     warning("max_hops larger than num_nodes/2, increasing num_nodes is recommended")
 
         def get_max_hops(g, s):
             lengths = nx.single_source_shortest_path_length(g, s)
