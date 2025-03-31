@@ -11,6 +11,7 @@ def evaluate(loader, model, criterion, device):
     model.eval()
     total_loss = 0.0
     total_nodes = 0
+    results = []
     with torch.no_grad():
         for data in loader:
             # Since batch_size=1, extract the single sample from each batch.
@@ -20,6 +21,23 @@ def evaluate(loader, model, criterion, device):
             total_loss += loss.item() * data["node_count"].sum()
             total_nodes += data["node_count"].sum().item()
     return total_loss / total_nodes
+
+def evaluate_ood(loaders, model, criterion, device):
+    model.eval()
+    total_loss = 0.0
+    total_nodes = 0
+    results = []
+    with torch.no_grad():
+        for loader in loaders:
+            for data in loader:
+                # Since batch_size=1, extract the single sample from each batch.
+                data = to_device(data, device)
+                pred = model(data)
+                loss = criterion(pred, data["y"])
+                total_loss += loss.item() * data["node_count"].sum()
+                total_nodes += data["node_count"].sum().item()
+                results.append(total_loss / total_nodes)
+    return results
 
 def plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_distances, num_nodes, source_node, layer_num=None):
     G_nx = nx.Graph()

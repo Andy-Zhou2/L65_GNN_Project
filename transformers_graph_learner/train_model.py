@@ -16,7 +16,7 @@ import pickle
 from .graph_gen import SSSPDataset, collate_fn
 from .token_graph_transformer import TokenGT
 from .utils import to_device
-from .evaluate_model import evaluate, evaluate_on_graph
+from .evaluate_model import evaluate, evaluate_ood, evaluate_on_graph
 from .early_stopper import EarlyStopping
 
 
@@ -53,7 +53,7 @@ def train_model(cfg: DictConfig):
     in_feat_dim = cfg.dataset.in_feat_dim
     token_in_dim = in_feat_dim + 2 * d_p + d_e
 
-    # Create the dataset.
+    # Create the training dataset.
     dataset_name = f'{cfg.dataset.num_graphs} graphs ({cfg.dataset.n_nodes_range[0]}-{cfg.dataset.n_nodes_range[1]}) ecc {cfg.dataset.eccentricity} layer {cfg.model.num_layers}'
     if cfg.dataset.use_existing and os.path.exists(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl')):
         with open(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl'), 'rb') as f:
@@ -76,15 +76,13 @@ def train_model(cfg: DictConfig):
         os.makedirs(cfg.dataset.dataset_path, exist_ok=True)
         with open(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl'), 'wb') as f:
             pickle.dump(dataset, f)
-
-    print(f"Total graphs in dataset: {len(dataset)}")
-
+    print(f"Total graphs in dataset for train: {len(dataset)}")
     # Split dataset into train and test (e.g., 80/20 split).
     num_train = int(cfg.dataset.split * len(dataset))
     train_dataset = dataset[:num_train]
     test_dataset = dataset[num_train:]
-    print(f"Train graphs: {len(train_dataset)}, Test graphs: {len(test_dataset)}")
-
+    num_test = len(test_dataset)
+    print(f"Train graphs: {len(train_dataset)}")
     # Create DataLoaders.
     train_loader = DataLoader(
         train_dataset,
@@ -100,6 +98,47 @@ def train_model(cfg: DictConfig):
         pin_memory=False,
         collate_fn=collate_fn,
     )
+
+    # Create the OOD testing dataset.
+    ood_test_loaders = []
+    ood_configs = cfg.dataset.test_set_configs
+    for i, ood_config in enumerate(ood_configs):
+        print(f"Loading test dataset {i+1}/{len(ood_configs)}, with config {ood_config}")
+        n_low, n_high, ecc = ood_config.split(",")
+        n_low, n_high, ecc = int(n_low), int(n_high), int(ecc)
+        dataset_name = f'{num_test} graphs ({n_low}-{n_high}) ecc {ecc} layer {cfg.model.num_layers}'
+        if cfg.dataset.use_existing and os.path.exists(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl')):
+            with open(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl'), 'rb') as f:
+                dataset = pickle.load(f)
+            assert len(dataset) >= num_test, f'Existing dataset has {len(dataset)} graphs, but requested {num_test}'
+            dataset = dataset[:num_test]
+            print(f'Using {len(dataset)} graphs from existing dataset')
+        else:
+            dataset = SSSPDataset(
+                num_graphs=num_test,
+                d_p=d_p,
+                n_nodes_range=(n_low, n_high),
+                node_identifier_encoding=node_id_encode,
+                max_hops=ecc,
+                m=cfg.dataset.m,
+                p=cfg.dataset.p,
+                q=cfg.dataset.q,
+                intermediate_supervision_layers=cfg.model.num_layers,
+            )
+            os.makedirs(cfg.dataset.dataset_path, exist_ok=True)
+            with open(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl'), 'wb') as f:
+                pickle.dump(dataset, f)
+        print(f"Total graphs in test dataset with ({n_low}, {n_high} nodes, {ecc} ecc): {len(dataset)}")
+        print(f"Test graphs: {len(dataset)}")
+        # Create Dataloader
+        loader = DataLoader(
+            dataset,
+            batch_size=cfg.training.batch_size,
+            shuffle=False,
+            pin_memory=False,
+            collate_fn=collate_fn,
+        )
+        ood_test_loaders.append(loader)
 
     # Device configuration.
     device = torch.device(
@@ -136,6 +175,7 @@ def train_model(cfg: DictConfig):
     criterion = nn.MSELoss()
 
     best_test_loss = float("inf")
+    best_ood_losses = [float("inf") for _ in ood_configs]
     training_start_time = time.time()
     # Training loop.
     for epoch in range(cfg.training.num_epochs):
@@ -155,6 +195,7 @@ def train_model(cfg: DictConfig):
 
         avg_train_loss = total_loss / len(train_loader)
         test_loss = evaluate(test_loader, model, criterion, device)
+        ood_losses = evaluate_ood(ood_test_loaders, model, criterion, device)
         scheduler.step()
 
         # Save the model based on the configuration.
@@ -190,6 +231,22 @@ def train_model(cfg: DictConfig):
             wandb.summary["best_test_loss"] = test_loss
             best_test_loss = test_loss
 
+        for i, ood_loss in enumerate(ood_losses):
+            ood_config = ood_configs[i]
+            best_ood_loss = best_ood_losses[i]
+            # n_low, n_high, ecc = ood_config.split(",")
+            # n_low, n_high, ecc = int(n_low), int(n_high), int(ecc)
+            wandb.log(
+                {
+                    f"losses/{ood_config}_loss": ood_loss,
+                },
+                step=epoch,
+            )
+            if ood_loss < best_ood_loss:
+                wandb.summary[f"best_{ood_config}_loss"] = ood_loss
+                best_ood_loss[i] = ood_loss
+        
+
         # Early stopping
         if cfg.training.early_stopping.enabled:
             early_stopping(test_loss)
@@ -197,7 +254,5 @@ def train_model(cfg: DictConfig):
             if early_stopping.early_stop:
                 print("Early stopping triggered!")
                 break
-
-    # evaluate_on_graph(model, test_dataset, device)
 
     wandb.finish()

@@ -18,8 +18,9 @@ dataset:
   node_id_encode: "orf"
   in_feat_dim: 1
   split: 0.5
-  n_nodes_range: [8, 8]
-  eccentricity: 3  # null for no restriction
+  n_nodes_range: [5, 5]
+  eccentricity: 3  # null for no restriction\
+  test_set_configs: ["5,5,2", "5,5,4", "8,8,2", "8,8,3", "8,8,4"]
 
   m: 1
   p: 0.15
@@ -43,7 +44,7 @@ training:
 model:
   d_model: 512
   nhead: 1
-  num_layers: 2
+  num_layers: 4
   dropout: 0.1
   input_dropout: 0.1
   intermediate_supervision: false
