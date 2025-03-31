@@ -1,4 +1,6 @@
+import math
 import random
+import matplotlib as mpl
 import torch
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -55,15 +57,18 @@ def plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_
 
     # Create node labels with true (T) and predicted (P) distances.
     node_labels = {
-        i: f"T: {true_distances[i]:.2f}\nP: {predicted_distances[i]:.2f}"
+        i: ("Source\n" if i==source_node else "") + f"T: {true_distances[i]:.2f}\nP: {predicted_distances[i]:.2f}"
         for i in range(num_nodes)
     }
+    errors = {i: abs(true_distances[i] - predicted_distances[i]) for i in range(num_nodes)}
+    scale = 1.5
+    colors = {i: mpl.colormaps["rainbow"](1 / (1 + math.exp(-errors[i]*scale))) for i in range(num_nodes)}
 
     pos = nx.spring_layout(G_nx, seed=42)
 
     if ax is None:
         plt.figure(figsize=(10, 10))
-    nx.draw_networkx_nodes(G_nx, pos, node_color="lightblue", node_size=500, ax=ax)
+    nx.draw_networkx_nodes(G_nx, pos, node_color=list(colors.values()), node_size=500, ax=ax)
     nx.draw_networkx_edges(G_nx, pos, width=1.0, alpha=0.7, ax=ax)
     nx.draw_networkx_labels(G_nx, pos, labels=node_labels, font_size=10, ax=ax)
 
@@ -71,9 +76,9 @@ def plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_
         G_nx,
         pos,
         nodelist=[source_node],
-        node_color="orange",
+        node_color="cyan",
         node_size=600,
-        label="Source",
+        # label="Source",
         ax=ax,
     )
 
@@ -109,7 +114,7 @@ def evaluate_on_graph(model, sample_data, device, intermediate_supervision=False
 
     if single_plot:
         if intermediate_supervision:
-            fig, axes = plt.subplots(1, len(predicted_distances), figsize=(15,6))
+            fig, axes = plt.subplots(1, len(predicted_distances), figsize=(15,4))
             for i in range(len(predicted_distances)):
                 print('predicted_distances', predicted_distances.shape)
                 ax = axes[i]
@@ -122,7 +127,9 @@ def evaluate_on_graph(model, sample_data, device, intermediate_supervision=False
             predicted_distances = predicted_distances[-1]
             plot_predicted_graph(edge_index_np, edge_attr_np, true_distances, predicted_distances, num_nodes, source_node, ax=ax)
         fig.tight_layout()
-        if graph_config[0] == graph_config[1]:
+        if graph_config is None:
+            fig.suptitle(f"Graph Visualization: True vs Predicted Distances")
+        elif graph_config[0] == graph_config[1]:
             fig.suptitle(f"Graph Visualization: {graph_config[0]} nodes, ecc {graph_config[2]} - True vs Predicted Distances")
         else:
             fig.suptitle(f"Graph Visualization: {graph_config[0]}-{graph_config[1]} nodes, ecc {graph_config[2]} - True vs Predicted Distances")

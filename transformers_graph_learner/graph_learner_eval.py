@@ -62,24 +62,58 @@ def main(cfg: DictConfig):
     num_train = int(cfg.dataset.split * len(dataset))
     train_dataset = dataset[:num_train]
     test_dataset = dataset[num_train:]
+    num_test = len(test_dataset)
     print(f"Train graphs: {len(train_dataset)}, Test graphs: {len(test_dataset)}")
 
 
-    # Create DataLoaders.
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=cfg.training.batch_size,
-        shuffle=True,
-        pin_memory=False,
-        collate_fn=collate_fn,
-    )
-    test_loader = DataLoader(
-        test_dataset,
-        batch_size=2,
-        shuffle=False,
-        pin_memory=False,
-        collate_fn=collate_fn,
-    )
+    # # Create DataLoaders.
+    # train_loader = DataLoader(
+    #     train_dataset,
+    #     batch_size=cfg.training.batch_size,
+    #     shuffle=True,
+    #     pin_memory=False,
+    #     collate_fn=collate_fn,
+    # )
+    # test_loader = DataLoader(
+    #     test_dataset,
+    #     batch_size=2,
+    #     shuffle=False,
+    #     pin_memory=False,
+    #     collate_fn=collate_fn,
+    # )
+
+    # Create the OOD testing dataset.
+    ood_datasets = []
+    ood_configs = cfg.dataset.test_set_configs
+    for i, ood_config in enumerate(ood_configs):
+        print(f"Loading test dataset {i+1}/{len(ood_configs)}, with config {ood_config}")
+        n_low, n_high, ecc = ood_config.split(",")
+        n_low, n_high, ecc = int(n_low), int(n_high), int(ecc)
+        dataset_name = f'{num_test} graphs ({n_low}-{n_high}) ecc {ecc} layer {cfg.model.num_layers}'
+        if cfg.dataset.use_existing and os.path.exists(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl')):
+            with open(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl'), 'rb') as f:
+                dataset = pickle.load(f)
+            assert len(dataset) >= num_test, f'Existing dataset has {len(dataset)} graphs, but requested {num_test}'
+            dataset = dataset[:num_test]
+            print(f'Using {len(dataset)} graphs from existing dataset')
+        else:
+            dataset = SSSPDataset(
+                num_graphs=num_test,
+                d_p=d_p,
+                n_nodes_range=(n_low, n_high),
+                node_identifier_encoding=node_id_encode,
+                max_hops=ecc,
+                m=cfg.dataset.m,
+                p=cfg.dataset.p,
+                q=cfg.dataset.q,
+                intermediate_supervision_layers=cfg.model.num_layers,
+            )
+            os.makedirs(cfg.dataset.dataset_path, exist_ok=True)
+            with open(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl'), 'wb') as f:
+                pickle.dump(dataset, f)
+        print(f"Total graphs in test dataset with ({n_low}, {n_high} nodes, {ecc} ecc): {len(dataset)}")
+        print(f"Test graphs: {len(dataset)}")
+        ood_datasets.append(dataset)
 
     # Device configuration.
     device = torch.device(
@@ -98,17 +132,26 @@ def main(cfg: DictConfig):
         input_dropout=cfg.model.input_dropout,
     ).to(device)
 
-    model.load_state_dict(torch.load("models/interm_sup_ood-no_sup-seed_4/model_500.pth", map_location=device))
+    model.load_state_dict(torch.load("models/interm_sup_ood-sup-seed_2/model_1000.pth", map_location=device))
 
     sample_data = test_dataset[0]
-    evaluate_on_graph(
-        model, 
-        sample_data, 
-        device, 
-        cfg.model.intermediate_supervision, 
-        graph_config=(cfg.dataset.n_nodes_range[0], cfg.dataset.n_nodes_range[1], cfg.dataset.eccentricity),
-        single_plot=True,
-    )
+    evaluate_on_graph(model, sample_data, device, cfg.model.intermediate_supervision, single_plot=True)
+
+    idx = [1,1,2,0,1]
+    for i in range(len(ood_datasets)):
+        dataset = ood_datasets[i]
+        sample_data = dataset[idx[i]]
+        ood_config = ood_configs[i]
+        n_low, n_high, ecc = ood_config.split(",")
+        n_low, n_high, ecc = int(n_low), int(n_high), int(ecc)
+        evaluate_on_graph(
+            model, 
+            sample_data, 
+            device, 
+            cfg.model.intermediate_supervision, 
+            graph_config=(n_low, n_high, ecc),
+            single_plot=True,
+        )
 
 
 if __name__ == "__main__":
