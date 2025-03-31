@@ -29,7 +29,7 @@ def main(cfg: DictConfig):
 
     for seed in [1, 2, 3, 4]:
         for ecc in range(2, 7):
-            for num_layers in [1, 6]:
+            for num_layers in range(1, 6):
                 for num_heads in [1]: #, 2, 4, 8, 16]:
                     for supervision in [False]:  # [False, True]:
                         if supervision and ecc > num_layers:  # Supervision doesn't make sense in this case
