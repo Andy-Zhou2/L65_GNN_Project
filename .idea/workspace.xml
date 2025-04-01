@@ -4,9 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="72be881f-159a-4aae-a762-8a66d38ef03c" name="Changes" comment="Update configuration for intermediate supervision and adjust node range">
+    <list default="true" id="72be881f-159a-4aae-a762-8a66d38ef03c" name="Changes" comment="Update hyperparameter search loop">
+      <change afterPath="$PROJECT_DIR$/analysis/transformers_layer_head_analysis_8_nodes.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/transformers_layer_head_analysis.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/transformers_layer_head_analysis.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/transformers_layer_head_analysis.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/transformers_layer_head_analysis_16_nodes.ipynb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -74,7 +75,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "deletionFromPopupRequiresConfirmation": "false",
     "git-widget-placeholder": "intermediate-supervision",
-    "last_opened_file_path": "/home/andy/Desktop",
+    "last_opened_file_path": "/home/andy/PycharmProjects/L65_GNN_Project/analysis",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -86,6 +87,7 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/analysis" />
       <recent name="$PROJECT_DIR$/results" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
@@ -278,7 +280,7 @@
       <workItem from="1742830996870" duration="30683000" />
       <workItem from="1742994610255" duration="321000" />
       <workItem from="1743192627573" duration="20535000" />
-      <workItem from="1743278389727" duration="47169000" />
+      <workItem from="1743278389727" duration="56039000" />
     </task>
     <task id="LOCAL-00001" summary="Use GNN to predict single-source shortest distance">
       <option name="closed" value="true" />
@@ -456,7 +458,15 @@
       <option name="project" value="LOCAL" />
       <updated>1743446535651</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="Update hyperparameter search loop">
+      <option name="closed" value="true" />
+      <created>1743449465225</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1743449465225</updated>
+    </task>
+    <option name="localTasksCounter" value="24" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -509,7 +519,8 @@
     <MESSAGE value="data analysis and plotting scripts" />
     <MESSAGE value="analysis scripts" />
     <MESSAGE value="Update configuration for intermediate supervision and adjust node range" />
-    <option name="LAST_COMMIT_MESSAGE" value="Update configuration for intermediate supervision and adjust node range" />
+    <MESSAGE value="Update hyperparameter search loop" />
+    <option name="LAST_COMMIT_MESSAGE" value="Update hyperparameter search loop" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -552,7 +563,7 @@
     <SUITE FILE_PATH="coverage/L65_GNN_Project$supervision_efficiency_plot.coverage" NAME="supervision_efficiency_plot Coverage Results" MODIFIED="1743433818817" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/analysis" />
     <SUITE FILE_PATH="coverage/L65_GNN_Project$gcn_main.coverage" NAME="gnn_single_source_shortest_path.gcn_main Coverage Results" MODIFIED="1743125827934" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/L65_GNN_Project$evaluate.coverage" NAME="evaluate Coverage Results" MODIFIED="1743283118161" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/L65_GNN_Project$hypsearch_sweep.coverage" NAME="transformers_graph_learner.hypsearch_sweep Coverage Results" MODIFIED="1743446518790" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/L65_GNN_Project$hypsearch_sweep.coverage" NAME="transformers_graph_learner.hypsearch_sweep Coverage Results" MODIFIED="1743449527017" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/L65_GNN_Project$model.coverage" NAME="model Coverage Results" MODIFIED="1739901619719" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/L65_GNN_Project$main.coverage" NAME="main Coverage Results" MODIFIED="1740437105151" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/L65_GNN_Project$graph_learner_main.coverage" NAME="transformers_graph_learner.graph_learner_main Coverage Results" MODIFIED="1743285862582" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
