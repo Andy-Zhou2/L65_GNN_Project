@@ -23,6 +23,7 @@ from transformers_graph_learner.early_stopper import EarlyStopping
 
 # os.environ["WANDB_MODE"] = "disabled"
 
+
 def train(train_loader, model, optimizer, total_nodes_train, device):
     model.train()
     total_loss = 0.0
@@ -61,8 +62,10 @@ def main(cfg: DictConfig):
     num_layers = cfg.model.num_layers
     n_nodes_range = cfg.dataset.n_nodes_range
     seed = cfg.seed
-    custom_name = (f"GCN {num_layers} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) {cfg.dataset.num_graphs} graphs"
-                   f" seed {seed} lr {cfg.training.lr}")
+    custom_name = (
+        f"GCN {num_layers} nodes ({n_nodes_range[0]}-{n_nodes_range[1]}) {cfg.dataset.num_graphs} graphs"
+        f" seed {seed} lr {cfg.training.lr}"
+    )
 
     # Initialize Weights & Biases.
     wandb.init(
@@ -89,7 +92,9 @@ def main(cfg: DictConfig):
         q=cfg.dataset.q,
         max_hops=cfg.dataset.get("eccentricity", None),
     )
-    dataset = dataset[:cfg.dataset.num_graphs]  # The dataset may generate more graphs than requested!
+    dataset = dataset[
+        : cfg.dataset.num_graphs
+    ]  # The dataset may generate more graphs than requested!
     print(f"Dataset size: {len(dataset)}")
     # print(dataset[0])
 
@@ -119,9 +124,11 @@ def main(cfg: DictConfig):
         model.parameters(), cfg.training.lr, weight_decay=cfg.training.weight_decay
     )
     if cfg.training.early_stopping.enabled:
-        early_stopping = EarlyStopping(patience=cfg.training.early_stopping.patience,
-                                       verbose=cfg.training.early_stopping.verbose,
-                                       delta=cfg.training.early_stopping.min_delta)
+        early_stopping = EarlyStopping(
+            patience=cfg.training.early_stopping.patience,
+            verbose=cfg.training.early_stopping.verbose,
+            delta=cfg.training.early_stopping.min_delta,
+        )
 
     def lr_lambda(step, warmup_steps, t_total):
         if warmup_steps is None:

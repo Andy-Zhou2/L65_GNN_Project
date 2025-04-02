@@ -3,12 +3,15 @@ import warnings
 import torch
 from torch import Tensor
 import torch.nn.functional as F
-from torch.nn.modules.transformer import _get_clones, _get_seq_len, _detect_is_causal_mask
+from torch.nn.modules.transformer import (
+    _get_clones,
+    _get_seq_len,
+    _detect_is_causal_mask,
+)
 
 
 class EarlyExitTransformerEncoder(torch.nn.Module):
-    r"""Extended torch.nn.TransformerEncoder with early exiting
-    """
+    r"""Extended torch.nn.TransformerEncoder with early exiting"""
 
     __constants__ = ["norm"]
 

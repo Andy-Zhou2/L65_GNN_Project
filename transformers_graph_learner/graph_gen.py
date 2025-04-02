@@ -14,7 +14,7 @@ class SSSPDataset(torch.utils.data.Dataset):
         q,
         num_graphs,
         d_p=8,
-        n_nodes_range=(20, 20), 
+        n_nodes_range=(20, 20),
         node_identifier_encoding="one-hot",
         max_hops=None,
     ):
@@ -24,7 +24,7 @@ class SSSPDataset(torch.utils.data.Dataset):
             d_p (int): Dimensionality of the orthonormal node identifiers.
             node_identifier_encoding (str): Encoding method of node identifier P.
               One of ["one-hot", "orf", "laplacian"].
-            max_hops (int): If specified, maximum hops from the source node for graph generation. 
+            max_hops (int): If specified, maximum hops from the source node for graph generation.
         """
         self.num_graphs = num_graphs
         self.d_p = d_p
@@ -32,7 +32,11 @@ class SSSPDataset(torch.utils.data.Dataset):
             1  # Node and edge features are 1-dimensional (e.g. source flag and weight)
         )
         self.n_nodes_range = n_nodes_range  # Must be defined before generating graphs
-        assert node_identifier_encoding in ["one-hot", "orf", "laplacian"], f'Unsupported node_identifier_encoding {node_identifier_encoding}, should be one of ["one-hot", "orf", "laplacian"]'
+        assert node_identifier_encoding in [
+            "one-hot",
+            "orf",
+            "laplacian",
+        ], f'Unsupported node_identifier_encoding {node_identifier_encoding}, should be one of ["one-hot", "orf", "laplacian"]'
         self.node_identifier_encoding = node_identifier_encoding
         self.max_hops = max_hops
 
@@ -40,21 +44,26 @@ class SSSPDataset(torch.utils.data.Dataset):
         self.p = p
         self.q = q
 
-        self.data_list = [self.generate_graph(self.node_identifier_encoding) for _ in range(num_graphs)]
-
-
+        self.data_list = [
+            self.generate_graph(self.node_identifier_encoding)
+            for _ in range(num_graphs)
+        ]
 
     @torch.no_grad()
     def _generate_by_num_nodes(self, num_nodes):
         G = nx.extended_barabasi_albert_graph(num_nodes, self.m, self.p, self.q)
         source = random.choice(list(G.nodes()))
         return G, source
-    
+
     @torch.no_grad()
     def _generate_by_max_hops(self, max_hops, num_nodes):
-        assert max_hops < num_nodes, f"max_hops {max_hops} should be smaller than num_nodes {num_nodes}"
-        if max_hops > num_nodes/2:
-            warning("max_hops larger than num_nodes/2, increasing num_nodes is recommended")
+        assert (
+            max_hops < num_nodes
+        ), f"max_hops {max_hops} should be smaller than num_nodes {num_nodes}"
+        if max_hops > num_nodes / 2:
+            warning(
+                "max_hops larger than num_nodes/2, increasing num_nodes is recommended"
+            )
 
         def get_max_hops(g, s):
             lengths = nx.single_source_shortest_path_length(g, s)
@@ -86,7 +95,7 @@ class SSSPDataset(torch.utils.data.Dataset):
             cnt += 1
         # print(f"Generated graph with max_hops {max_hops} in {cnt} iterations")
         return G, source
-    
+
     @torch.no_grad()
     def generate_graph(self, node_identifier_encoding):
         # --- Generate a random connected graph ---
@@ -137,18 +146,34 @@ class SSSPDataset(torch.utils.data.Dataset):
                 # assert (N == N.t()).all(), "Sqrt degree matrix not symmetric"
                 L = torch.eye(num_nodes) - (N @ A @ N)
                 # assert (L == L.t()).all(), f"Laplacian matrix not symmetric, {L - L.t()}"
-                _, eigvec = torch.linalg.eigh(L)  # shape: [num_nodes, num_nodes], eigvec has columns as eigenvectors
+                _, eigvec = torch.linalg.eigh(
+                    L
+                )  # shape: [num_nodes, num_nodes], eigvec has columns as eigenvectors
                 # randomly flip eigvec's signs
-                signs = torch.where(torch.randint(0, 2, (eigvec.size(1),)) == 0, -1, 1)  # shape: [num_nodes]
+                signs = torch.where(
+                    torch.randint(0, 2, (eigvec.size(1),)) == 0, -1, 1
+                )  # shape: [num_nodes]
                 P = eigvec.to(torch.float) * signs[None, :]
                 if num_nodes < self.d_p:
                     pad = torch.zeros(num_nodes, self.d_p - num_nodes)
                     P = torch.cat([P, pad], dim=-1)
                 elif num_nodes > self.d_p:
-                    P = torch.cat([P[:, :(self.d_p-self.d_p//2)], P[:, -self.d_p//2:]], dim=-1) if self.d_p > 1 else P[:, :self.d_p]
+                    P = (
+                        torch.cat(
+                            [
+                                P[:, : (self.d_p - self.d_p // 2)],
+                                P[:, -self.d_p // 2 :],
+                            ],
+                            dim=-1,
+                        )
+                        if self.d_p > 1
+                        else P[:, : self.d_p]
+                    )
             case _:
-                raise ValueError(f"Invalid node identifier encoding {node_identifier_encoding}")
-            
+                raise ValueError(
+                    f"Invalid node identifier encoding {node_identifier_encoding}"
+                )
+
         assert P.shape == (num_nodes, self.d_p), f"{P.shape}"
 
         # --- Construct node tokens ---

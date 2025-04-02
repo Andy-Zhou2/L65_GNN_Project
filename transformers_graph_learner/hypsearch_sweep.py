@@ -25,7 +25,10 @@ def main(cfg: DictConfig):
 
     for file_path in src_py_files:
         shutil.copy(file_path, output_dir)
-    shutil.copy(f"transformers_graph_learner/configs/{HydraConfig.get().job.config_name}.yaml", output_dir)
+    shutil.copy(
+        f"transformers_graph_learner/configs/{HydraConfig.get().job.config_name}.yaml",
+        output_dir,
+    )
 
     print("Layers:", cfg.model.num_layers)
     print("Seed:", cfg.seed)

@@ -31,4 +31,3 @@ class EarlyExitGCN(torch.nn.Module):
                 break
             h = h + conv(h, data.edge_index, data.edge_attr)  # residual connection
         return h  # (num_nodes, emb_dim)
-        

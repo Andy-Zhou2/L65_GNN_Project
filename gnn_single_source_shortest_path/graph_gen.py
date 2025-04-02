@@ -36,12 +36,16 @@ class SSSPDataset(InMemoryDataset):
         G = nx.extended_barabasi_albert_graph(num_nodes, self.m, self.p, self.q)
         source = random.choice(list(G.nodes()))
         return G, source
-    
+
     @torch.no_grad()
     def _generate_by_max_hops(self, max_hops, num_nodes):
-        assert max_hops < num_nodes, f"max_hops {max_hops} should be smaller than num_nodes {num_nodes}"
-        if max_hops > num_nodes/2:
-            warning("max_hops larger than num_nodes/2, increasing num_nodes is recommended")
+        assert (
+            max_hops < num_nodes
+        ), f"max_hops {max_hops} should be smaller than num_nodes {num_nodes}"
+        if max_hops > num_nodes / 2:
+            warning(
+                "max_hops larger than num_nodes/2, increasing num_nodes is recommended"
+            )
 
         def get_max_hops(g, s):
             lengths = nx.single_source_shortest_path_length(g, s)
@@ -83,9 +87,7 @@ class SSSPDataset(InMemoryDataset):
             if self.max_hops is None:
                 G, source = self._generate_by_num_nodes(num_nodes)
             else:
-                G, source = self._generate_by_max_hops(
-                    self.max_hops, num_nodes
-                )
+                G, source = self._generate_by_max_hops(self.max_hops, num_nodes)
 
             # --- Assign random weights to edges ---
             for u, v in G.edges():

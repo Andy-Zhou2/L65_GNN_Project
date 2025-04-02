@@ -54,13 +54,17 @@ def train_model(cfg: DictConfig):
     # Create the dataset.
     if cfg.dataset.use_existing:
         dataset_name = cfg.dataset.dataset_name
-        with open(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl'), 'rb') as f:
+        with open(
+            os.path.join(cfg.dataset.dataset_path, f"{dataset_name}.pkl"), "rb"
+        ) as f:
             dataset = pickle.load(f)
-        assert len(dataset) >= cfg.dataset.num_graphs, f'Existing dataset has {len(dataset)} graphs, but requested {cfg.dataset.num_graphs}'
-        dataset = dataset[:cfg.dataset.num_graphs]
-        print(f'Using {len(dataset)} graphs from existing dataset')
+        assert (
+            len(dataset) >= cfg.dataset.num_graphs
+        ), f"Existing dataset has {len(dataset)} graphs, but requested {cfg.dataset.num_graphs}"
+        dataset = dataset[: cfg.dataset.num_graphs]
+        print(f"Using {len(dataset)} graphs from existing dataset")
     else:
-        dataset_name = f'{cfg.dataset.num_graphs}_{cfg.dataset.n_nodes_range[0]}-{cfg.dataset.n_nodes_range[1]}_{cfg.dataset.eccentricity}'
+        dataset_name = f"{cfg.dataset.num_graphs}_{cfg.dataset.n_nodes_range[0]}-{cfg.dataset.n_nodes_range[1]}_{cfg.dataset.eccentricity}"
         dataset = SSSPDataset(
             num_graphs=cfg.dataset.num_graphs,
             d_p=d_p,
@@ -72,7 +76,9 @@ def train_model(cfg: DictConfig):
             q=cfg.dataset.q,
         )
         os.makedirs(cfg.dataset.dataset_path, exist_ok=True)
-        with open(os.path.join(cfg.dataset.dataset_path, f'{dataset_name}.pkl'), 'wb') as f:
+        with open(
+            os.path.join(cfg.dataset.dataset_path, f"{dataset_name}.pkl"), "wb"
+        ) as f:
             pickle.dump(dataset, f)
 
     print(f"Total graphs in dataset: {len(dataset)}")
@@ -117,11 +123,15 @@ def train_model(cfg: DictConfig):
     ).to(device)
 
     # Define optimizer, scheduler, and loss function.
-    optimizer = optim.AdamW(model.parameters(), lr=cfg.training.lr, weight_decay=cfg.training.weight_decay)
+    optimizer = optim.AdamW(
+        model.parameters(), lr=cfg.training.lr, weight_decay=cfg.training.weight_decay
+    )
     if cfg.training.early_stopping.enabled:
-        early_stopping = EarlyStopping(patience=cfg.training.early_stopping.patience,
-                                       verbose=cfg.training.early_stopping.verbose,
-                                       delta=cfg.training.early_stopping.min_delta)
+        early_stopping = EarlyStopping(
+            patience=cfg.training.early_stopping.patience,
+            verbose=cfg.training.early_stopping.verbose,
+            delta=cfg.training.early_stopping.min_delta,
+        )
 
     def lr_lambda(step, warmup_steps, t_total):
         if warmup_steps is None:
@@ -130,7 +140,12 @@ def train_model(cfg: DictConfig):
             return float(step) / float(max(1, warmup_steps))
         return max(0.0, float(t_total - step) / float(max(1, t_total - warmup_steps)))
 
-    scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda step: lr_lambda(step, cfg.scheduler.warmup_steps, cfg.training.num_epochs))
+    scheduler = optim.lr_scheduler.LambdaLR(
+        optimizer,
+        lr_lambda=lambda step: lr_lambda(
+            step, cfg.scheduler.warmup_steps, cfg.training.num_epochs
+        ),
+    )
     criterion = nn.MSELoss()
 
     best_test_loss = float("inf")

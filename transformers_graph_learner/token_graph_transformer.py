@@ -5,7 +5,17 @@ from probing.earlyexit_transformer_encoder import EarlyExitTransformerEncoder
 
 
 class TokenGT(nn.Module):
-    def __init__(self, token_in_dim, d_model, nhead, num_layers, d_e=None, activation="gelu", dropout=0.1, input_dropout=0.1):
+    def __init__(
+        self,
+        token_in_dim,
+        d_model,
+        nhead,
+        num_layers,
+        d_e=None,
+        activation="gelu",
+        dropout=0.1,
+        input_dropout=0.1,
+    ):
         """
         Args:
             token_in_dim (int): Dimensionality of the input tokens
@@ -32,9 +42,17 @@ class TokenGT(nn.Module):
         )
         # Following TokenGT, use GeLU and layernorm-first. Following Llama, use d_ff = d_model * 3.5
         encoder_layer = nn.TransformerEncoderLayer(
-            d_model=d_model, nhead=nhead, dim_feedforward=int(3.5 * d_model), activation=activation, dropout=dropout, batch_first=True, norm_first=True,
+            d_model=d_model,
+            nhead=nhead,
+            dim_feedforward=int(3.5 * d_model),
+            activation=activation,
+            dropout=dropout,
+            batch_first=True,
+            norm_first=True,
         )
-        self.transformer = EarlyExitTransformerEncoder(encoder_layer, num_layers=num_layers)
+        self.transformer = EarlyExitTransformerEncoder(
+            encoder_layer, num_layers=num_layers
+        )
         # Following TokenGT, use layernorm before linear
         self.pred_head = nn.Sequential(
             nn.LayerNorm(d_model),
@@ -58,9 +76,11 @@ class TokenGT(nn.Module):
         node_count = data["node_count"]  # [B]
 
         # Append type identifiers
-        node_edge_type = torch.ones_like(attn_mask, dtype=torch.int, device=tokens.device)  # [B, num_tokens]
+        node_edge_type = torch.ones_like(
+            attn_mask, dtype=torch.int, device=tokens.device
+        )  # [B, num_tokens]
         for b in range(len(node_edge_type)):
-            node_edge_type[b][:node_count[b]] = 0
+            node_edge_type[b][: node_count[b]] = 0
         type_id = self.type_embedding(node_edge_type)  # [B, num_tokens, d_e]
         tokens = torch.cat((tokens, type_id), dim=-1)  # [B, num_tokens, token_in_dim]
 
