@@ -26,7 +26,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="master" />
+        <entry key="$PROJECT_DIR$" value="intermediate-supervision" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -434,8 +434,7 @@
     <MESSAGE value="Fix graph evaluation" />
     <MESSAGE value="Add graph visualization script for dataset analysis" />
     <MESSAGE value="sweep, add config for n_node range" />
-    <MESSAGE value="Update README with report link and abstract for Tokenized Graph Transformer" />
-    <option name="LAST_COMMIT_MESSAGE" value="Update README with report link and abstract for Tokenized Graph Transformer" />
+    <option name="LAST_COMMIT_MESSAGE" value="sweep, add config for n_node range" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/L65_GNN_Project$t.coverage" NAME="main Coverage Results" MODIFIED="1739959959617" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
