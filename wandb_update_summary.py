@@ -2,7 +2,7 @@ import numpy as np
 import wandb
 import wandb.wandb_run
 
-api = wandb.Api(api_key=None)
+api = wandb.Api()
 
 # Define the project (replace with your actual project and entity)
 entity = "L65_Project"
